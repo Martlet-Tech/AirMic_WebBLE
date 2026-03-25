@@ -344,7 +344,7 @@
 <body>
 
   <header>
-    <span class="title">AIRMIC</span>
+    <span class="title">AirMic</span>
     <div class="subtitle">FPV AUDIO MODULE // BLE CONTROLLER</div>
   </header>
 
@@ -442,7 +442,7 @@
       try {
         log('scanning for AirMic...', 'tx')
         device = await navigator.bluetooth.requestDevice({
-          filters: [{ name: 'AirMic' }],
+          filters: [{ name: 'Martlet AirMic' }],
           optionalServices: [SVC_AIRMIC]
         })
         device.addEventListener('gattserverdisconnected', onDisc)

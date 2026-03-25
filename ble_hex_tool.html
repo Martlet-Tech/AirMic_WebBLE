@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLE HEX Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1c2c; --panel: #222639; --border: #3a3f5c;
+    --white: #f4f4f4; --yellow: #ffcd75; --green: #38b764;
+    --red: #b13e53; --blue: #41a6f6; --gray: #566c86;
+    --font: 'Press Start 2P', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 8px 8px;
+    font-family: var(--font); font-size: 8px;
+    color: var(--white); min-height: 100vh;
+    padding: 24px 16px; display: flex;
+    flex-direction: column; align-items: center; gap: 16px;
+  }
+  .title { font-size: 14px; color: var(--yellow); letter-spacing: 3px;
+    text-shadow: 3px 3px 0 #8b5e00; margin-bottom: 8px; }
+  .box {
+    width: 100%; max-width: 480px; background: var(--panel);
+    box-shadow: 0 -4px 0 0 var(--border), 0 4px 0 0 var(--border),
+                -4px 0 0 0 var(--border), 4px 0 0 0 var(--border);
+    padding: 20px;
+  }
+  .label { font-size: 6px; color: var(--gray); letter-spacing: 2px; margin-bottom: 10px; }
+  .btn {
+    font-family: var(--font); font-size: 7px; color: var(--bg);
+    background: var(--yellow); border: none; padding: 10px 16px;
+    cursor: pointer; box-shadow: 4px 4px 0 #8b5e00; width: 100%;
+    letter-spacing: 1px; margin-bottom: 4px;
+  }
+  .btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #8b5e00; }
+  .btn:disabled { background: var(--border); color: var(--gray);
+    box-shadow: 4px 4px 0 #111; cursor: not-allowed; }
+  .btn.green { background: var(--green); box-shadow: 4px 4px 0 #1e6b3a; }
+  .btn.green:active { box-shadow: 2px 2px 0 #1e6b3a; }
+  .btn.red { background: var(--red); box-shadow: 4px 4px 0 #6b1e2a; }
+  .btn.red:active { box-shadow: 2px 2px 0 #6b1e2a; }
+  .status-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .led { width: 10px; height: 10px; background: var(--gray); flex-shrink: 0; }
+  .led.on { background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 2s steps(1) infinite; }
+  @keyframes blink { 0%,90%,100%{opacity:1} 95%{opacity:.4} }
+  .st { font-size: 7px; color: var(--gray); }
+  .st.on { color: var(--green); }
+
+  textarea {
+    font-family: var(--font); font-size: 8px;
+    background: var(--bg); color: var(--yellow);
+    border: 2px solid var(--border); padding: 10px;
+    width: 100%; resize: vertical; min-height: 60px;
+    outline: none; margin-bottom: 10px; line-height: 1.8;
+  }
+  textarea:focus { border-color: var(--yellow); }
+
+  .quick-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .qbtn {
+    font-family: var(--font); font-size: 6px; color: var(--gray);
+    background: var(--bg); border: 2px solid var(--border);
+    padding: 8px; cursor: pointer; text-align: left; line-height: 1.8;
+  }
+  .qbtn:hover { border-color: var(--blue); color: var(--blue); }
+
+  .log {
+    background: var(--bg); border: 2px solid var(--border);
+    padding: 10px; height: 200px; overflow-y: auto;
+    font-size: 6px; line-height: 2;
+  }
+  .log::-webkit-scrollbar { width: 6px; }
+  .log::-webkit-scrollbar-thumb { background: var(--border); }
+  .lr { display: flex; gap: 8px; }
+  .lt { color: var(--gray); flex-shrink: 0; }
+  .lm.ok { color: var(--green); }
+  .lm.err { color: var(--red); }
+  .lm.tx { color: var(--blue); }
+  .lm.rx { color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<div class="title">BLE HEX TOOL</div>
+
+<!-- 连接 -->
+<div class="box">
+  <div class="label">▶ CONNECTION</div>
+  <div class="status-bar">
+    <div class="led" id="led"></div>
+    <span class="st" id="st">NOT CONNECTED</span>
+  </div>
+  <button class="btn" id="btnConn" onclick="toggleConnect()">[ SCAN & CONNECT ]</button>
+</div>
+
+<!-- 发送 -->
+<div class="box">
+  <div class="label">▶ SEND HEX  (空格分隔，如: 24 4D 3C 00 01 01)</div>
+
+  <!-- 快捷命令 -->
+  <div class="quick-btns">
+    <button class="qbtn" onclick="fillHex('24 4D 3C 00 01 01')">MSP_API_VERSION<br>24 4D 3C 00 01 01</button>
+    <button class="qbtn" onclick="fillHex('24 4D 3C 00 65 65')">MSP_STATUS<br>24 4D 3C 00 65 65</button>
+    <button class="qbtn" onclick="fillHex('01 08 ' + tsHex())">CMD_TIME_SYNC<br>01 08 [timestamp]</button>
+    <button class="qbtn" onclick="fillHex('04 00')">CMD_GET_STATUS<br>04 00</button>
+  </div>
+
+  <textarea id="hexInput" placeholder="24 4D 3C 00 01 01"></textarea>
+  <button class="btn green" id="btnSend" onclick="sendHex()" disabled>[ SEND TO NUS TX ]</button>
+</div>
+
+<!-- 日志 -->
+<div class="box">
+  <div class="label">▶ LOG</div>
+  <div class="log" id="logBox"></div>
+</div>
+
+<script>
+// UUID
+const NUS_SVC   = '6e400001-b5a3-f393-e0a9-e50e24dcca9e'
+const NUS_TX    = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'  // write
+const NUS_RX    = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'  // notify
+const AIRMIC_SVC  = '100f0e0d-0c0b-0a09-0807-060504030201'
+const AIRMIC_CTRL = '120f0e0d-0c0b-0a09-0807-060504030201'
+const AIRMIC_RESP = '130f0e0d-0c0b-0a09-0807-060504030201'
+
+let device = null, nusTxChar = null
+
+function tsHex() {
+  const ts = BigInt(Date.now())
+  const arr = []
+  for (let i = 0; i < 8; i++) arr.push(((ts >> BigInt(i*8)) & 0xffn).toString(16).padStart(2,'0'))
+  return arr.join(' ')
+}
+
+function fillHex(s) { document.getElementById('hexInput').value = s }
+
+function log(msg, type='') {
+  const box = document.getElementById('logBox')
+  const t = new Date().toTimeString().slice(0,8)
+  box.innerHTML += `<div class="lr"><span class="lt">${t}</span><span class="lm ${type}">${msg}</span></div>`
+  box.scrollTop = box.scrollHeight
+}
+
+async function toggleConnect() {
+  if (device?.gatt.connected) { device.gatt.disconnect(); return }
+  try {
+    log('scanning...', 'tx')
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ name: 'Martlet AirMic' }],
+      optionalServices: [NUS_SVC, AIRMIC_SVC]
+    })
+    device.addEventListener('gattserverdisconnected', () => { log('disconnected','err'); setUI(false) })
+    const server = await device.gatt.connect()
+    log('connected: ' + device.name, 'ok')
+
+    // NUS
+    const nusSvc = await server.getPrimaryService(NUS_SVC)
+    nusTxChar = await nusSvc.getCharacteristic(NUS_TX)
+    const nusRx = await nusSvc.getCharacteristic(NUS_RX)
+    await nusRx.startNotifications()
+    nusRx.addEventListener('characteristicvaluechanged', e => {
+      const d = new Uint8Array(e.target.value.buffer)
+      const hex = Array.from(d).map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join(' ')
+      log('← NUS RX: ' + hex, 'rx')
+    })
+    log('NUS notify subscribed', 'ok')
+
+    // AirMic custom service
+    try {
+      const amSvc  = await server.getPrimaryService(AIRMIC_SVC)
+      const amCtrl = await amSvc.getCharacteristic(AIRMIC_CTRL)
+      const amResp = await amSvc.getCharacteristic(AIRMIC_RESP)
+      await amResp.startNotifications()
+      amResp.addEventListener('characteristicvaluechanged', e => {
+        const d = new Uint8Array(e.target.value.buffer)
+        const hex = Array.from(d).map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join(' ')
+        log('← AIRMIC RESP: ' + hex, 'rx')
+      })
+      log('AirMic service ready', 'ok')
+    } catch(e) {
+      log('AirMic service not found (ok in bridge mode)', 'err')
+    }
+
+    setUI(true)
+  } catch(e) {
+    log('error: ' + e.message, 'err')
+    setUI(false)
+  }
+}
+
+function setUI(on) {
+  document.getElementById('led').className = 'led' + (on?' on':'')
+  document.getElementById('st').className  = 'st' + (on?' on':'')
+  document.getElementById('st').textContent = on ? 'CONNECTED' : 'NOT CONNECTED'
+  document.getElementById('btnConn').className   = on ? 'btn red' : 'btn'
+  document.getElementById('btnConn').textContent = on ? '[ DISCONNECT ]' : '[ SCAN & CONNECT ]'
+  document.getElementById('btnSend').disabled = !on
+}
+
+async function sendHex() {
+  const raw = document.getElementById('hexInput').value.trim()
+  if (!raw) return
+  const bytes = raw.split(/\s+/).map(h => parseInt(h, 16)).filter(n => !isNaN(n))
+  if (!bytes.length) { log('invalid hex input', 'err'); return }
+  const buf = new Uint8Array(bytes).buffer
+  const hex = bytes.map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join(' ')
+  try {
+    await nusTxChar.writeValueWithoutResponse(buf)
+    log('→ NUS TX: ' + hex, 'tx')
+  } catch(e) {
+    log('send error: ' + e.message, 'err')
+  }
+}
+</script>
+</body>
+</html>
