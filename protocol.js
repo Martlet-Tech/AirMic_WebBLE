@@ -136,8 +136,8 @@ function onNotify(e) {
   if (cmd === 0x02) setResp('respSync', ok ? 'OK - RATE SET' : 'ERROR', ok)
   if (cmd === 0x03) setResp('respSync', ok ? 'OK - CH SET' : 'ERROR', ok)
   if (cmd === 0x04 && ok) {
-    const ts = d[2] | (d[3] << 8) | (d[4] << 16) | (d[5] << 24)
-    setResp('respStat', 'REC=' + d[1] + '  TIME=' + new Date(ts * 1000).toISOString(), true)
+    const ts = d[3] | (d[4] << 8) | (d[5] << 16) | (d[6] << 24)
+    setResp('respStat', 'REC=' + d[2] + '  TIME=' + new Date(ts * 1000).toISOString(), true)
   }
   if (cmd === 0x05) {
     setResp('respWifi', ok ? 'OK - WIFI SETUP STARTED' : 'ERROR', ok)
