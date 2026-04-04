@@ -60,9 +60,16 @@ function setUI(on) {
   document.getElementById('stText').textContent = on ? 'CONNECTED' : 'NOT CONNECTED'
   document.getElementById('btnConn').className = on ? 'px-btn red' : 'px-btn'
   document.getElementById('btnConn').textContent = on ? '[ DISCONNECT ]' : '[ SCAN & CONNECT ]'
-    ;['btnSync', 'btnRate', 'btnCh', 'btnStat', 'btnWifi'].forEach(id => {
+    ;['btnSync', 'btnRate', 'btnCh', 'btnStat', 'btnWifi', 'btnFileList'].forEach(id => {
       document.getElementById(id).disabled = !on
     })
+  // 重置文件操作按钮状态
+  document.getElementById('selectedFile').value = ''
+  document.getElementById('newFileName').value = ''
+  document.getElementById('btnDeleteFile').disabled = true
+  document.getElementById('btnRenameFile').disabled = true
+  document.getElementById('respFileAction').textContent = '—'
+  document.getElementById('respFileAction').className = 'resp'
 }
 
 // 响应显示

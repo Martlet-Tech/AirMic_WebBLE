@@ -330,14 +330,80 @@ header {
   }
 }
 
+/* ── 文件列表 ── */
+.file-list {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  padding: 10px;
+  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.file-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.file-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  font-family: 'Microsoft YaHei', 'Press Start 2P', monospace;
+}
+
+.file-item:last-child {
+  border-bottom: none;
+}
+
+.file-name {
+  color: var(--white);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  color: var(--gray);
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+/* ── 文件操作区域 ── */
+.file-actions {
+  margin-top: 16px;
+}
+
+.file-actions .field {
+  margin-bottom: 12px;
+}
+
+.file-actions .field input[readonly] {
+  background: var(--bg);
+  color: var(--gray);
+  border-color: var(--border);
+}
+
+.file-actions .row2 {
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
 /* ── WiFi 密码输入框 ── */
 .field div {
   position: relative;
 }
 
 .field input {
-  font-family: var(--font);
-  font-size: 7px;
+  font-family: 'Microsoft YaHei', 'Press Start 2P', monospace;
+  font-size: 10px;
   background: var(--bg);
   color: var(--white);
   border: 2px solid var(--border);

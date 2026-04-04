@@ -48,6 +48,81 @@ async function cmdGetStatus() {
   await send(new Uint8Array([0x04, 0x00]).buffer)
 }
 
+// 获取文件列表命令
+async function cmdGetFileList() {
+  await send(new Uint8Array([0x06, 0x00]).buffer)
+}
+
+// 删除文件命令
+async function cmdDeleteFile() {
+  const filename = document.getElementById('selectedFile').value
+  if (!filename) {
+    setResp('respFileAction', 'ERROR: No file selected', false)
+    return
+  }
+  
+  // 构建删除文件命令
+  const filenameBytes = new TextEncoder().encode(filename)
+  const b = new ArrayBuffer(2 + 1 + filenameBytes.length)
+  const v = new DataView(b)
+  v.setUint8(0, 0x07)
+  v.setUint8(1, 1 + filenameBytes.length)
+  v.setUint8(2, filenameBytes.length)
+  
+  for (let i = 0; i < filenameBytes.length; i++) {
+    v.setUint8(3 + i, filenameBytes[i])
+  }
+  
+  await send(b)
+}
+
+// 重命名文件命令
+async function cmdRenameFile() {
+  const oldFilename = document.getElementById('selectedFile').value
+  const newFilename = document.getElementById('newFileName').value
+  
+  if (!oldFilename) {
+    setResp('respFileAction', 'ERROR: No file selected', false)
+    return
+  }
+  
+  if (!newFilename) {
+    setResp('respFileAction', 'ERROR: New filename is required', false)
+    return
+  }
+  
+  // 构建重命名文件命令
+  const oldFilenameBytes = new TextEncoder().encode(oldFilename)
+  const newFilenameBytes = new TextEncoder().encode(newFilename)
+  const totalLen = 1 + oldFilenameBytes.length + 1 + newFilenameBytes.length
+  
+  const b = new ArrayBuffer(2 + totalLen)
+  const v = new DataView(b)
+  v.setUint8(0, 0x08)
+  v.setUint8(1, totalLen)
+  
+  let offset = 2
+  v.setUint8(offset++, oldFilenameBytes.length)
+  for (let i = 0; i < oldFilenameBytes.length; i++) {
+    v.setUint8(offset++, oldFilenameBytes[i])
+  }
+  v.setUint8(offset++, newFilenameBytes.length)
+  for (let i = 0; i < newFilenameBytes.length; i++) {
+    v.setUint8(offset++, newFilenameBytes[i])
+  }
+  
+  await send(b)
+}
+
+// 选择文件
+function selectFile(filename) {
+  document.getElementById('selectedFile').value = filename
+  document.getElementById('newFileName').value = filename
+  // 启用删除和重命名按钮
+  document.getElementById('btnDeleteFile').disabled = false
+  document.getElementById('btnRenameFile').disabled = false
+}
+
 // 密码显示/隐藏功能
 function togglePassword() {
   const passwordInput = document.getElementById('wifiPassword')
@@ -83,6 +158,15 @@ function loadWifiSettings() {
   } catch (e) {
     console.error('Failed to load WiFi settings:', e)
   }
+}
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
 // WiFi设置命令
@@ -141,5 +225,56 @@ function onNotify(e) {
   }
   if (cmd === 0x05) {
     setResp('respWifi', ok ? 'OK - WIFI SETUP STARTED' : 'ERROR', ok)
+  }
+  if (cmd === 0x06) {
+    if (ok) {
+      // 解析文件列表
+      const fileList = document.getElementById('fileList')
+      fileList.innerHTML = ''
+      
+      let offset = 2 // 跳过命令码和状态码
+      const fileCount = d[offset++] | (d[offset++] << 8)
+      
+      setResp('respFileList', `OK - ${fileCount} files found`, true)
+      
+      for (let i = 0; i < fileCount && offset < d.length; i++) {
+        const nameLen = d[offset++]
+        const name = new TextDecoder().decode(d.slice(offset, offset + nameLen))
+        offset += nameLen
+        const size = d[offset++] | (d[offset++] << 8) | (d[offset++] << 16) | (d[offset++] << 24)
+        
+        // 创建文件项
+        const fileItem = document.createElement('div')
+        fileItem.className = 'file-item'
+        fileItem.innerHTML = `
+          <span class="file-name">${name}</span>
+          <span class="file-size">${formatFileSize(size)}</span>
+        `
+        // 添加点击事件
+        fileItem.addEventListener('click', () => selectFile(name))
+        fileList.appendChild(fileItem)
+      }
+    } else {
+      setResp('respFileList', 'ERROR - Failed to get file list', false)
+      document.getElementById('fileList').innerHTML = ''
+    }
+  }
+  if (cmd === 0x07) {
+    if (ok) {
+      setResp('respFileAction', 'OK - File deleted successfully', true)
+      // 重新获取文件列表
+      setTimeout(cmdGetFileList, 500)
+    } else {
+      setResp('respFileAction', 'ERROR - Failed to delete file', false)
+    }
+  }
+  if (cmd === 0x08) {
+    if (ok) {
+      setResp('respFileAction', 'OK - File renamed successfully', true)
+      // 重新获取文件列表
+      setTimeout(cmdGetFileList, 500)
+    } else {
+      setResp('respFileAction', 'ERROR - Failed to rename file', false)
+    }
   }
 }

@@ -46,6 +46,31 @@
     <div class="resp" id="respWifi">—</div>
   </div>
 
+  <!-- 文件浏览 -->
+  <div class="pixel-box">
+    <div class="card-label">FILE BROWSER CMD:0x06</div>
+    <button class="px-btn green" id="btnFileList" onclick="cmdGetFileList()" disabled>[ GET FILE LIST ]</button>
+    <div class="resp" id="respFileList">—</div>
+    <div class="file-list" id="fileList">
+      <!-- 文件列表将在这里动态生成 -->
+    </div>
+    <div class="file-actions">
+      <div class="field">
+        <label>SELECTED FILE</label>
+        <input type="text" id="selectedFile" readonly>
+      </div>
+      <div class="field">
+        <label>NEW NAME</label>
+        <input type="text" id="newFileName">
+      </div>
+      <div class="row2">
+        <button class="px-btn red" id="btnDeleteFile" onclick="cmdDeleteFile()" disabled>[ DELETE ]</button>
+        <button class="px-btn blue" id="btnRenameFile" onclick="cmdRenameFile()" disabled>[ RENAME ]</button>
+      </div>
+      <div class="resp" id="respFileAction">—</div>
+    </div>
+  </div>
+
   <!-- 时间同步 -->
   <div class="pixel-box">
     <div class="card-label">TIME SYNC CMD:0x01</div>
