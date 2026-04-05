@@ -376,6 +376,37 @@ header {
   flex-shrink: 0;
 }
 
+.file-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 12px;
+}
+
+.file-item-actions button {
+  font-family: var(--font);
+  font-size: 6px;
+  padding: 4px 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  transition: transform 0.05s, box-shadow 0.05s;
+}
+
+.file-item-actions button:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.play-btn {
+  background: var(--green);
+  color: var(--bg);
+}
+
+.download-btn {
+  background: var(--blue);
+  color: var(--bg);
+}
+
 /* ── 文件操作区域 ── */
 .file-actions {
   margin-top: 16px;

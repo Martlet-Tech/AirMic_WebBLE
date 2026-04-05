@@ -70,6 +70,11 @@ function setUI(on) {
   document.getElementById('btnRenameFile').disabled = true
   document.getElementById('respFileAction').textContent = '—'
   document.getElementById('respFileAction').className = 'resp'
+  
+  // 连接成功后获取WiFi状态
+  if (on) {
+    setTimeout(cmdGetWifiStatus, 1000)
+  }
 }
 
 // 响应显示

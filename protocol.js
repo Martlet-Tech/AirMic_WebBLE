@@ -53,6 +53,11 @@ async function cmdGetFileList() {
   await send(new Uint8Array([0x06, 0x00]).buffer)
 }
 
+// 获取WiFi状态命令
+async function cmdGetWifiStatus() {
+  await send(new Uint8Array([0x09, 0x00]).buffer)
+}
+
 // 删除文件命令
 async function cmdDeleteFile() {
   const filename = document.getElementById('selectedFile').value
@@ -160,6 +165,120 @@ function loadWifiSettings() {
   }
 }
 
+// 播放文件
+function playFile(filename) {
+  if (!window.airmicWifiIp) {
+    setResp('respFileAction', 'ERROR: WiFi not connected', false);
+    return;
+  }
+  
+  const url = `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
+  const audio = new Audio(url)
+  audio.play().catch(e => {
+    setResp('respFileAction', 'ERROR: Failed to play file', false)
+  })
+  setResp('respFileAction', `Playing: ${filename}`, true)
+}
+
+// 分段下载：严格串行，每次只要 4KB
+// ESP32 用 httpd_resp_send() + Content-Length，不用 chunked encoding
+// 浏览器收到 Content-Length 指定的字节数后直接结束，不等 chunked 终止符
+async function downloadFileSegmented(filename, fileSize) {
+  if (!window.airmicWifiIp) {
+    setResp('respFileAction', 'ERROR: WiFi not connected', false);
+    return;
+  }
+
+  const CHUNK = 4096;
+  const chunks = [];
+  let pos = 0;
+
+  while (pos < fileSize) {
+    const start = pos;
+    const end   = Math.min(pos + CHUNK, fileSize);
+    const url   = `http://${window.airmicWifiIp}/download?${encodeURIComponent(filename)}&start=${start}&end=${end}`;
+
+    let blob;
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      blob = await resp.blob();
+      if (blob.size === 0) throw new Error('empty response');
+    } catch (e) {
+      setResp('respFileAction', `ERROR @ ${start}-${end}: ${e.message}`, false);
+      return;
+    }
+
+    chunks.push(blob);
+    pos = end;
+    setResp('respFileAction', `下载中… ${Math.round(pos/fileSize*100)}%  (${pos}/${fileSize} B)`, true);
+  }
+
+  const final = new Blob(chunks, { type: 'audio/wav' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(final);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  setResp('respFileAction', `✓ 下载完成: ${filename}`, true);
+}
+
+// 修改下载文件函数以支持分段下载
+function downloadFile(filename) {
+  if (!window.airmicWifiIp) {
+    setResp('respFileAction', 'ERROR: WiFi not connected', false);
+    return;
+  }
+  
+  // 获取文件大小（从文件列表中）
+  const fileList = document.getElementById('fileList');
+  const fileItems = fileList.querySelectorAll('.file-item');
+  let fileSize = null;
+  
+  for (let item of fileItems) {
+    const nameSpan = item.querySelector('.file-name');
+    if (nameSpan && nameSpan.textContent === filename) {
+      const sizeMatch = item.textContent.match(/(\d+\.\d+)\s*MB/);
+      if (sizeMatch) {
+        fileSize = parseFloat(sizeMatch[1]) * 1024 * 1024; // 转换为字节
+        break;
+      }
+    }
+  }
+  
+  if (fileSize && fileSize > 100000) { // 大于100KB使用分段下载
+    downloadFileSegmented(filename, fileSize);
+  } else {
+    // 小文件使用直接下载
+    const url = `http://${window.airmicWifiIp}/download?${encodeURIComponent(filename)}`
+    
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok')
+        }
+        return response.blob()
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        setResp('respFileAction', `Downloading: ${filename}`, true)
+      })
+      .catch(error => {
+        console.error('Download error:', error)
+        setResp('respFileAction', 'ERROR: Failed to download file', false)
+      })
+  }
+}
+
 // 格式化文件大小
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 B'
@@ -225,6 +344,10 @@ function onNotify(e) {
   }
   if (cmd === 0x05) {
     setResp('respWifi', ok ? 'OK - WIFI SETUP STARTED' : 'ERROR', ok)
+    // WiFi设置成功后，延迟获取WiFi状态
+    if (ok) {
+      setTimeout(cmdGetWifiStatus, 5000) // 延迟5秒，等待WiFi连接完成
+    }
   }
   if (cmd === 0x06) {
     if (ok) {
@@ -249,6 +372,10 @@ function onNotify(e) {
         fileItem.innerHTML = `
           <span class="file-name">${name}</span>
           <span class="file-size">${formatFileSize(size)}</span>
+          <div class="file-item-actions">
+            <button class="play-btn" onclick="playFile('${name}')">播放</button>
+            <button class="download-btn" onclick="downloadFile('${name}')">下载</button>
+          </div>
         `
         // 添加点击事件
         fileItem.addEventListener('click', () => selectFile(name))
@@ -275,6 +402,41 @@ function onNotify(e) {
       setTimeout(cmdGetFileList, 500)
     } else {
       setResp('respFileAction', 'ERROR - Failed to rename file', false)
+    }
+  }
+  if (cmd === 0x09) {
+    if (ok) {
+      let offset = 2 // 跳过命令码和状态码
+      const status = d[offset++]
+      const ipLen = d[offset++]
+      let ip = ''
+      if (ipLen > 0) {
+        ip = new TextDecoder().decode(d.slice(offset, offset + ipLen))
+      }
+      
+      // 状态值: 0=未连接, 1=已连接但无IP, 2=已连接且有IP
+      let statusText, isConnected;
+      if (status === 2) {
+        statusText = `OK - Connected, IP: ${ip}`;
+        isConnected = true;
+      } else if (status === 1) {
+        statusText = 'WARNING - WiFi Connected but No IP Address';
+        isConnected = false;
+      } else {
+        statusText = 'ERROR - Not connected';
+        isConnected = false;
+      }
+      
+      setResp('respWifi', statusText, status === 2);
+      // 只有当WiFi连接且有IP地址时，才设置全局变量
+      if (status === 2 && ipLen > 0) {
+        window.airmicWifiIp = ip;
+      } else {
+        window.airmicWifiIp = null;
+      }
+    } else {
+      setResp('respWifi', 'ERROR - Failed to get WiFi status', false);
+      window.airmicWifiIp = null;
     }
   }
 }
