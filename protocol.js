@@ -288,6 +288,43 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+// 全局变量用于跟踪WiFi状态轮询
+let wifiPollInterval = null;
+let wifiPollAttempts = 0;
+const MAX_WIFI_POLL_ATTEMPTS = 15; // 最多15次，每次2秒，总共30秒
+const WIFI_POLL_INTERVAL = 2000; // 每2秒检查一次
+
+// 停止WiFi状态轮询
+function stopWifiPolling() {
+  if (wifiPollInterval) {
+    clearInterval(wifiPollInterval);
+    wifiPollInterval = null;
+    wifiPollAttempts = 0;
+  }
+}
+
+// 开始WiFi状态轮询
+function startWifiPolling() {
+  stopWifiPolling(); // 确保没有重复的轮询
+  wifiPollAttempts = 0;
+  
+  wifiPollInterval = setInterval(async () => {
+    wifiPollAttempts++;
+    
+    try {
+      await cmdGetWifiStatus();
+    } catch (e) {
+      console.error('WiFi status poll error:', e);
+    }
+    
+    // 如果达到最大尝试次数，停止轮询
+    if (wifiPollAttempts >= MAX_WIFI_POLL_ATTEMPTS) {
+      stopWifiPolling();
+      setResp('respWifi', 'ERROR - WiFi connection timeout', false);
+    }
+  }, WIFI_POLL_INTERVAL);
+}
+
 // WiFi设置命令
 async function cmdWifiSetup() {
   const ssid = document.getElementById('wifiSsid').value
@@ -344,9 +381,9 @@ function onNotify(e) {
   }
   if (cmd === 0x05) {
     setResp('respWifi', ok ? 'OK - WIFI SETUP STARTED' : 'ERROR', ok)
-    // WiFi设置成功后，延迟获取WiFi状态
+    // WiFi设置成功后，开始轮询WiFi状态直到连接成功或超时
     if (ok) {
-      setTimeout(cmdGetWifiStatus, 5000) // 延迟5秒，等待WiFi连接完成
+      startWifiPolling();
     }
   }
   if (cmd === 0x06) {
@@ -419,12 +456,16 @@ function onNotify(e) {
       if (status === 2) {
         statusText = `OK - Connected, IP: ${ip}`;
         isConnected = true;
+        // WiFi连接成功，停止轮询
+        stopWifiPolling();
       } else if (status === 1) {
         statusText = 'WARNING - WiFi Connected but No IP Address';
         isConnected = false;
+        // 继续轮询，可能还在获取IP
       } else {
         statusText = 'ERROR - Not connected';
         isConnected = false;
+        // 继续轮询，可能还在连接中
       }
       
       setResp('respWifi', statusText, status === 2);
@@ -437,6 +478,8 @@ function onNotify(e) {
     } else {
       setResp('respWifi', 'ERROR - Failed to get WiFi status', false);
       window.airmicWifiIp = null;
+      // 出错时也停止轮询
+      stopWifiPolling();
     }
   }
 }
