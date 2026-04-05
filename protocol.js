@@ -186,35 +186,71 @@ function playFile(filename) {
 async function downloadFileSegmented(filename, fileSize) {
   if (!window.airmicWifiIp) {
     setResp('respFileAction', 'ERROR: WiFi not connected', false);
+    console.log('Download failed: WiFi not connected');
     return;
   }
 
+  console.log('Starting segmented download:', { filename, fileSize });
   const CHUNK = 4096;
   const chunks = [];
   let pos = 0;
+  let segmentCount = 0;
 
   while (pos < fileSize) {
     const start = pos;
     const end   = Math.min(pos + CHUNK, fileSize);
     const url   = `http://${window.airmicWifiIp}/download?${encodeURIComponent(filename)}&start=${start}&end=${end}`;
+    segmentCount++;
+    
+    console.log(`Downloading segment ${segmentCount}: ${start}-${end} (${end-start} bytes)`);
+    console.log(`Request URL: ${url}`);
 
     let blob;
     try {
+      const startTime = Date.now();
+      console.log(`Segment ${segmentCount}: Fetching...`);
       const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const endTime = Date.now();
+      console.log(`Segment ${segmentCount}: Fetch completed in ${endTime - startTime}ms`);
+      console.log(`Segment ${segmentCount}: Response status: ${resp.status} ${resp.statusText}`);
+      
+      if (!resp.ok) {
+        console.log(`Segment ${segmentCount}: HTTP error: ${resp.status}`);
+        throw new Error(`HTTP ${resp.status}`);
+      }
+      
+      console.log(`Segment ${segmentCount}: Reading blob...`);
       blob = await resp.blob();
-      if (blob.size === 0) throw new Error('empty response');
+      console.log(`Segment ${segmentCount}: Blob size: ${blob.size} bytes`);
+      
+      if (blob.size === 0) {
+        console.log(`Segment ${segmentCount}: Empty response`);
+        throw new Error('empty response');
+      }
+      
+      console.log(`Segment ${segmentCount}: Success`);
     } catch (e) {
+      console.error(`Segment ${segmentCount}: Error:`, e);
       setResp('respFileAction', `ERROR @ ${start}-${end}: ${e.message}`, false);
       return;
     }
 
     chunks.push(blob);
     pos = end;
+    console.log(`Progress: ${Math.round(pos/fileSize*100)}%  (${pos}/${fileSize} B)`);
     setResp('respFileAction', `下载中… ${Math.round(pos/fileSize*100)}%  (${pos}/${fileSize} B)`, true);
+    
+    // 短暂延迟，给服务器时间处理下一个请求
+    console.log(`Waiting 50ms before next segment...`);
+    await new Promise(resolve => setTimeout(resolve, 50));
   }
 
+  console.log('All segments downloaded, merging...');
+  console.log(`Total segments: ${segmentCount}, total chunks: ${chunks.length}`);
+  
   const final = new Blob(chunks, { type: 'audio/wav' });
+  console.log(`Final blob size: ${final.size} bytes`);
+  
   const a = document.createElement('a');
   a.href = URL.createObjectURL(final);
   a.download = filename;
@@ -222,6 +258,8 @@ async function downloadFileSegmented(filename, fileSize) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
+  
+  console.log('Download completed successfully');
   setResp('respFileAction', `✓ 下载完成: ${filename}`, true);
 }
 
@@ -248,34 +286,11 @@ function downloadFile(filename) {
     }
   }
   
-  if (fileSize && fileSize > 100000) { // 大于100KB使用分段下载
+  if (fileSize) {
     downloadFileSegmented(filename, fileSize);
   } else {
-    // 小文件使用直接下载
-    const url = `http://${window.airmicWifiIp}/download?${encodeURIComponent(filename)}`
-    
-    fetch(url)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok')
-        }
-        return response.blob()
-      })
-      .then(blob => {
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-        setResp('respFileAction', `Downloading: ${filename}`, true)
-      })
-      .catch(error => {
-        console.error('Download error:', error)
-        setResp('respFileAction', 'ERROR: Failed to download file', false)
-      })
+    // 如果无法获取文件大小，使用默认值
+    downloadFileSegmented(filename, 4 * 1024 * 1024); // 默认4MB
   }
 }
 
