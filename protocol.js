@@ -275,6 +275,55 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+// 通过HTTP请求获取文件列表
+async function fetchFileList() {
+  if (!window.airmicWifiIp) {
+    setResp('respFileList', 'WiFi not connected', false)
+    return
+  }
+  
+  try {
+    const url = `http://${window.airmicWifiIp}/files`
+    const response = await fetch(url)
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    // 显示文件列表
+    const fileList = document.getElementById('fileList')
+    fileList.innerHTML = ''
+    
+    if (data.files && data.files.length > 0) {
+      data.files.forEach(file => {
+        // 创建文件项
+        const fileItem = document.createElement('div')
+        fileItem.className = 'file-item'
+        fileItem.innerHTML = `
+          <span class="file-name">${file.name}</span>
+          <span class="file-size">${formatFileSize(file.size)}</span>
+          <div class="file-item-actions">
+            <button class="play-btn" onclick="playFile('${file.name}')">播放</button>
+            <button class="download-btn" onclick="downloadFile('${file.name}')">下载</button>
+          </div>
+        `
+        // 添加点击事件
+        fileItem.addEventListener('click', () => selectFile(file.name))
+        fileList.appendChild(fileItem)
+      })
+    } else {
+      fileList.innerHTML = '<div class="no-files">No files found</div>'
+    }
+    
+    log(`Fetched ${data.count} files via HTTP`, 'ok')
+  } catch (error) {
+    setResp('respFileList', `ERROR: ${error.message}`, false)
+    log(`Error fetching file list: ${error.message}`, 'err')
+  }
+}
+
 // 全局变量用于跟踪WiFi状态轮询
 let wifiPollInterval = null;
 let wifiPollAttempts = 0;
@@ -375,38 +424,20 @@ function onNotify(e) {
   }
   if (cmd === 0x06) {
     if (ok) {
-      // 解析文件列表
-      const fileList = document.getElementById('fileList')
-      fileList.innerHTML = ''
-      
+      // 解析文件总数
       let offset = 2 // 跳过命令码和状态码
       const fileCount = d[offset++] | (d[offset++] << 8)
       
       setResp('respFileList', `OK - ${fileCount} files found`, true)
       
-      for (let i = 0; i < fileCount && offset < d.length; i++) {
-        const nameLen = d[offset++]
-        const name = new TextDecoder().decode(d.slice(offset, offset + nameLen))
-        offset += nameLen
-        const size = d[offset++] | (d[offset++] << 8) | (d[offset++] << 16) | (d[offset++] << 24)
-        
-        // 创建文件项
-        const fileItem = document.createElement('div')
-        fileItem.className = 'file-item'
-        fileItem.innerHTML = `
-          <span class="file-name">${name}</span>
-          <span class="file-size">${formatFileSize(size)}</span>
-          <div class="file-item-actions">
-            <button class="play-btn" onclick="playFile('${name}')">播放</button>
-            <button class="download-btn" onclick="downloadFile('${name}')">下载</button>
-          </div>
-        `
-        // 添加点击事件
-        fileItem.addEventListener('click', () => selectFile(name))
-        fileList.appendChild(fileItem)
+      // 通过HTTP请求获取详细文件列表
+      if (window.airmicWifiIp) {
+        fetchFileList()
+      } else {
+        setResp('respFileList', 'WiFi not connected, cannot get file details', false)
       }
     } else {
-      setResp('respFileList', 'ERROR - Failed to get file list', false)
+      setResp('respFileList', 'ERROR - Failed to get file count', false)
       document.getElementById('fileList').innerHTML = ''
     }
   }
