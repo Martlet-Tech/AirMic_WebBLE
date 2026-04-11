@@ -189,7 +189,9 @@ async function downloadFileSegmented(filename, fileSize) {
     return;
   }
 
-  const CHUNK = 655360; // 64KB 分块
+  // 记录开始时间，清除旧的下载信息
+  const startTime = Date.now();
+  const CHUNK = 512*1024; // 64KB 分块
   const chunks = [];
   let pos = 0;
 
@@ -224,7 +226,13 @@ async function downloadFileSegmented(filename, fileSize) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
-  setResp('respFileAction', `✓ 下载完成: ${filename}`, true);
+  
+  // 计算下载用时和平均速度
+  const endTime = Date.now();
+  const duration = (endTime - startTime) / 1000; // 转换为秒
+  const averageSpeed = (fileSize / (1024 * 1024)) / duration; // MB/s
+  
+  setResp('respFileAction', `✓ 下载完成: ${filename} (用时: ${duration.toFixed(2)}s, 平均速度: ${averageSpeed.toFixed(2)} MB/s)`, true);
 }
 
 // 修改下载文件函数以支持分段下载
