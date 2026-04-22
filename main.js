@@ -60,7 +60,7 @@ function setUI(on) {
   document.getElementById('stText').textContent = on ? 'CONNECTED' : 'NOT CONNECTED'
   document.getElementById('btnConn').className = on ? 'px-btn red' : 'px-btn'
   document.getElementById('btnConn').textContent = on ? '[ DISCONNECT ]' : '[ SCAN & CONNECT ]'
-    ;['btnSync', 'btnRate', 'btnCh', 'btnStat', 'btnWifi', 'btnFileList'].forEach(id => {
+    ;['btnSync', 'btnRate', 'btnCh', 'btnStat', 'btnWifi', 'btnFileList', 'btnOta'].forEach(id => {
       document.getElementById(id).disabled = !on
     })
   // 重置文件操作按钮状态
@@ -82,4 +82,13 @@ function setResp(id, msg, ok) {
   const el = document.getElementById(id)
   el.textContent = msg
   el.className = 'resp ' + (ok ? 'ok' : 'err')
+}
+
+function openOta() {
+  if (!window.airmicWifiIp) {
+    log('OTA requires WiFi connection', 'err')
+    return
+  }
+  window.open(`http://${window.airmicWifiIp}/ota`, '_blank')
+  log('opened OTA page: ' + window.airmicWifiIp, 'ok')
 }

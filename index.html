@@ -2,11 +2,11 @@
 <html lang="zh">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirMic Control</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AirMic Control</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -69,6 +69,12 @@
       </div>
       <div class="resp" id="respFileAction">—</div>
     </div>
+  </div>
+
+  <div class="pixel-box">
+    <div class="card-label">OTA UPGRADE</div>
+    <div id="otaStatus">—</div>
+    <button id="btnOta" class="px-btn" onclick="openOta()">[ OPEN OTA PAGE ]</button>
   </div>
 
   <!-- 时间同步 -->
