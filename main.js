@@ -109,7 +109,7 @@ function setUI(on) {
   deviceEl.textContent = on && device?.name ? device.name : ''
 
   // Enable/disable BLE-dependent buttons
-  const ids = ['btnSync', 'btnRate', 'btnCh', 'btnStat', 'btnWifi', 'btnFileList', 'btnOta']
+  const ids = ['btnSync', 'btnRate', 'btnCh', 'btnStat', 'btnWifi', 'btnFileList']
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = !on })
 
   // Reset file panel on disconnect
@@ -139,6 +139,7 @@ function wifiReset() {
   document.getElementById('topIp').textContent = '--'
   document.querySelector('.wifi-icon').className = 'wifi-icon'
   document.getElementById('aboutIp').textContent = '--'
+  document.getElementById('btnOta').disabled = true
 }
 
 // ── Response Display ──
@@ -152,11 +153,66 @@ function setResp(id, msg, ok) {
 
 // ── OTA ──
 
-function openOta() {
-  if (!window.airmicWifiIp) {
-    log('OTA requires WiFi connection', 'err')
-    return
+function startOtaUpload() {
+  if (!window.airmicWifiIp) { log('OTA requires WiFi connection', 'err'); return }
+
+  const fileInput = document.getElementById('otaFile')
+  const file = fileInput.files[0]
+  if (!file) { setResp('respOta', 'Select a .bin file first', false); return }
+
+  if (!file.name.endsWith('.bin')) { setResp('respOta', 'Only .bin files are supported', false); return }
+
+  const progress = document.getElementById('otaProgress')
+  const fill = document.getElementById('otaProgressFill')
+  const text = document.getElementById('otaProgressText')
+  const btn = document.getElementById('btnOta')
+
+  progress.style.display = 'flex'
+  fill.style.width = '0%'
+  fill.className = 'ota-progress-fill'
+  text.textContent = '0%'
+  btn.disabled = true
+  setResp('respOta', 'Uploading...', false)
+
+  const xhr = new XMLHttpRequest()
+  xhr.open('POST', `http://${window.airmicWifiIp}/ota`)
+  xhr.timeout = 120000 // 2 min timeout for large firmware
+
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100)
+      fill.style.width = pct + '%'
+      text.textContent = pct + '%'
+    }
   }
-  window.open(`http://${window.airmicWifiIp}/ota`, '_blank')
-  log('Opened OTA page: ' + window.airmicWifiIp, 'ok')
+
+  xhr.onload = () => {
+    fill.classList.add(xhr.status === 200 ? 'done' : 'error')
+    fill.style.width = '100%'
+    text.textContent = '100%'
+    btn.disabled = false
+    const msg = xhr.responseText || (xhr.status === 200 ? 'Flash complete, rebooting...' : 'HTTP ' + xhr.status)
+    setResp('respOta', msg, xhr.status === 200)
+    log('OTA: ' + msg, xhr.status === 200 ? 'ok' : 'err')
+    fileInput.value = ''
+    setTimeout(() => { progress.style.display = 'none' }, 5000)
+  }
+
+  xhr.onerror = () => {
+    fill.classList.add('error')
+    btn.disabled = false
+    setResp('respOta', 'Upload failed - check CORS or network', false)
+    log('OTA: network error (CORS or connection)', 'err')
+    setTimeout(() => { progress.style.display = 'none' }, 3000)
+  }
+
+  xhr.ontimeout = () => {
+    fill.classList.add('error')
+    btn.disabled = false
+    setResp('respOta', 'Upload timed out', false)
+    log('OTA: upload timed out', 'err')
+  }
+
+  xhr.send(file)
+  log('OTA upload started: ' + file.name, 'tx')
 }

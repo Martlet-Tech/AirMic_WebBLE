@@ -340,6 +340,7 @@ function setWifiConnected(ip) {
   if (icon) icon.className = 'wifi-icon' + (ip ? ' connected' : '')
   document.getElementById('topIp').textContent = ip || '--'
   document.getElementById('aboutIp').textContent = ip || '--'
+  document.getElementById('btnOta').disabled = !ip
 }
 
 function onNotify(e) {

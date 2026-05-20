@@ -122,9 +122,22 @@
   <!-- === OTA Tab === -->
   <div class="tab-pane" id="tab-ota">
     <div class="setting-group">
-      <div class="setting-title">OTA Upgrade</div>
-      <div class="ota-status" id="otaStatus">Firmware upgrade via WiFi</div>
-      <button class="btn btn-secondary btn-sm" id="btnOta" onclick="openOta()" disabled>Open OTA Page</button>
+      <div class="setting-title">Firmware Upgrade</div>
+      <div class="ota-desc">Select a .bin firmware file to upload and flash via WiFi. The device will reboot after completion.</div>
+
+      <div class="field-group">
+        <input type="file" id="otaFile" accept=".bin" class="file-input">
+      </div>
+
+      <div class="ota-progress" id="otaProgress" style="display:none">
+        <div class="ota-progress-bar">
+          <div class="ota-progress-fill" id="otaProgressFill"></div>
+        </div>
+        <span class="ota-progress-text" id="otaProgressText">0%</span>
+      </div>
+
+      <button class="btn btn-primary btn-sm" id="btnOta" onclick="startOtaUpload()" disabled>Upload &amp; Flash</button>
+      <div class="resp-msg" id="respOta">&mdash;</div>
     </div>
   </div>
 
