@@ -191,7 +191,7 @@ async function downloadFileSegmented(filename, fileSize) {
 
   // 记录开始时间，清除旧的下载信息
   const startTime = Date.now();
-  const CHUNK = 512*1024; // 64KB 分块
+  const CHUNK = 256*1024; // 256KB 分块
   const chunks = [];
   let pos = 0;
 
