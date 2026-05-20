@@ -180,89 +180,36 @@ function playFile(filename) {
   setResp('respFileAction', `Playing: ${filename}`, true)
 }
 
-// 分段下载：严格串行，每次只要 32KB
-// ESP32 用 httpd_resp_send() + Content-Length，不用 chunked encoding
-// 浏览器收到 Content-Length 指定的字节数后直接结束，不等 chunked 终止符
-async function downloadFileSegmented(filename, fileSize) {
+// 单请求流式下载：fetch 整个文件，服务端 chunked streaming
+async function downloadFile(filename) {
   if (!window.airmicWifiIp) {
     setResp('respFileAction', 'ERROR: WiFi not connected', false);
     return;
   }
 
-  // 记录开始时间，清除旧的下载信息
   const startTime = Date.now();
-  const CHUNK = 256*1024; // 256KB 分块
-  const chunks = [];
-  let pos = 0;
+  const url = `http://${window.airmicWifiIp}/dl?${encodeURIComponent(filename)}`;
 
-  while (pos < fileSize) {
-    const start = pos;
-    const end   = Math.min(pos + CHUNK, fileSize);
-    const url   = `http://${window.airmicWifiIp}/download?${encodeURIComponent(filename)}&start=${start}&end=${end}`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const blob = await resp.blob();
+    if (blob.size === 0) throw new Error('empty response');
 
-    let blob;
-    try {
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      blob = await resp.blob();
-      if (blob.size === 0) throw new Error('empty response');
-    } catch (e) {
-      setResp('respFileAction', `ERROR @ ${start}-${end}: ${e.message}`, false);
-      return;
-    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
 
-    chunks.push(blob);
-    pos = end;
-    setResp('respFileAction', `下载中… ${Math.round(pos/fileSize*100)}%  (${pos}/${fileSize} B)`, true);
-    // 短暂延迟，给服务器时间处理下一个请求
-    await new Promise(resolve => setTimeout(resolve, 5));
-  }
-
-  const final = new Blob(chunks, { type: 'audio/wav' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(final);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
-  
-  // 计算下载用时和平均速度
-  const endTime = Date.now();
-  const duration = (endTime - startTime) / 1000; // 转换为秒
-  const averageSpeed = (fileSize / (1024 * 1024)) / duration; // MB/s
-  
-  setResp('respFileAction', `✓ 下载完成: ${filename} (用时: ${duration.toFixed(2)}s, 平均速度: ${averageSpeed.toFixed(2)} MB/s)`, true);
-}
-
-// 修改下载文件函数以支持分段下载
-function downloadFile(filename) {
-  if (!window.airmicWifiIp) {
-    setResp('respFileAction', 'ERROR: WiFi not connected', false);
-    return;
-  }
-  
-  // 获取文件大小（从文件列表中）
-  const fileList = document.getElementById('fileList');
-  const fileItems = fileList.querySelectorAll('.file-item');
-  let fileSize = null;
-  
-  for (let item of fileItems) {
-    const nameSpan = item.querySelector('.file-name');
-    if (nameSpan && nameSpan.textContent === filename) {
-      const sizeMatch = item.textContent.match(/(\d+\.\d+)\s*MB/);
-      if (sizeMatch) {
-        fileSize = parseFloat(sizeMatch[1]) * 1024 * 1024; // 转换为字节
-        break;
-      }
-    }
-  }
-  
-  if (fileSize) {
-    downloadFileSegmented(filename, fileSize);
-  } else {
-    // 如果无法获取文件大小，使用默认值
-    downloadFileSegmented(filename, 4 * 1024 * 1024); // 默认4MB
+    const endTime = Date.now();
+    const duration = (endTime - startTime) / 1000;
+    const avgSpeed = (blob.size / (1024 * 1024)) / duration;
+    setResp('respFileAction', `✓ 下载完成: ${filename} (${duration.toFixed(2)}s, ${avgSpeed.toFixed(2)} MB/s)`, true);
+  } catch (e) {
+    setResp('respFileAction', `ERROR: ${e.message}`, false);
   }
 }
 
