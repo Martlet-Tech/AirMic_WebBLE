@@ -1,24 +1,23 @@
-// ── 应用层协议 ────────────────────────────────────────────
+// ── Protocol ──────────────────────────────────────────────
 
-// UUID 配置
 const SVC_AIRMIC = '100f0e0d-0c0b-0a09-0807-060504030201'
 const CHAR_CTRL = '120f0e0d-0c0b-0a09-0807-060504030201'
 const CHAR_RESP = '130f0e0d-0c0b-0a09-0807-060504030201'
 
 let device = null, ctrlChar = null
 
-// 发送命令
 async function send(buf) {
   if (!ctrlChar) { log('not connected', 'err'); return }
   try {
     const hex = Array.from(new Uint8Array(buf))
       .map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')
     await ctrlChar.writeValueWithoutResponse(buf)
-    log('→ ' + hex, 'tx')
+    log('TX → ' + hex, 'tx')
   } catch (e) { log('send err: ' + e.message, 'err') }
 }
 
-// 时间同步命令
+// ── Commands ──
+
 async function cmdTimeSync() {
   const ts = BigInt(Date.now())
   const b = new ArrayBuffer(10)
@@ -28,7 +27,6 @@ async function cmdTimeSync() {
   await send(b)
 }
 
-// 采样率设置命令
 async function cmdSampleRate() {
   const r = parseInt(document.getElementById('selRate').value)
   const b = new ArrayBuffer(6), v = new DataView(b)
@@ -36,415 +34,391 @@ async function cmdSampleRate() {
   await send(b)
 }
 
-// 声道设置命令
 async function cmdChannels() {
   const c = parseInt(document.getElementById('selCh').value)
   const b = new Uint8Array([0x03, 0x01, c])
   await send(b.buffer)
 }
 
-// 状态查询命令
 async function cmdGetStatus() {
   await send(new Uint8Array([0x04, 0x00]).buffer)
 }
 
-// 获取文件列表命令
 async function cmdGetFileList() {
+  const container = document.getElementById('fileList')
+  const empty = document.getElementById('fileEmpty')
+  if (empty) { empty.textContent = 'Loading...' }
+  else { container.innerHTML = '<div class="empty-state">Loading...</div>' }
   await send(new Uint8Array([0x06, 0x00]).buffer)
 }
 
-// 获取WiFi状态命令
 async function cmdGetWifiStatus() {
   await send(new Uint8Array([0x09, 0x00]).buffer)
 }
 
-// 删除文件命令
-async function cmdDeleteFile() {
-  const filename = document.getElementById('selectedFile').value
-  if (!filename) {
-    setResp('respFileAction', 'ERROR: No file selected', false)
-    return
-  }
-  
-  // 构建删除文件命令
-  const filenameBytes = new TextEncoder().encode(filename)
-  const b = new ArrayBuffer(2 + 1 + filenameBytes.length)
+async function cmdDeleteFile(filename) {
+  const b = new ArrayBuffer(2 + 1 + filename.length)
   const v = new DataView(b)
+  const bytes = new TextEncoder().encode(filename)
   v.setUint8(0, 0x07)
-  v.setUint8(1, 1 + filenameBytes.length)
-  v.setUint8(2, filenameBytes.length)
-  
-  for (let i = 0; i < filenameBytes.length; i++) {
-    v.setUint8(3 + i, filenameBytes[i])
-  }
-  
+  v.setUint8(1, 1 + bytes.length)
+  v.setUint8(2, bytes.length)
+  for (let i = 0; i < bytes.length; i++) v.setUint8(3 + i, bytes[i])
   await send(b)
 }
 
-// 重命名文件命令
-async function cmdRenameFile() {
-  const oldFilename = document.getElementById('selectedFile').value
-  const newFilename = document.getElementById('newFileName').value
-  
-  if (!oldFilename) {
-    setResp('respFileAction', 'ERROR: No file selected', false)
-    return
-  }
-  
-  if (!newFilename) {
-    setResp('respFileAction', 'ERROR: New filename is required', false)
-    return
-  }
-  
-  // 构建重命名文件命令
-  const oldFilenameBytes = new TextEncoder().encode(oldFilename)
-  const newFilenameBytes = new TextEncoder().encode(newFilename)
-  const totalLen = 1 + oldFilenameBytes.length + 1 + newFilenameBytes.length
-  
-  const b = new ArrayBuffer(2 + totalLen)
+async function cmdRenameFile(oldName, newName) {
+  const oldB = new TextEncoder().encode(oldName)
+  const newB = new TextEncoder().encode(newName)
+  const total = 1 + oldB.length + 1 + newB.length
+  const b = new ArrayBuffer(2 + total)
   const v = new DataView(b)
-  v.setUint8(0, 0x08)
-  v.setUint8(1, totalLen)
-  
-  let offset = 2
-  v.setUint8(offset++, oldFilenameBytes.length)
-  for (let i = 0; i < oldFilenameBytes.length; i++) {
-    v.setUint8(offset++, oldFilenameBytes[i])
-  }
-  v.setUint8(offset++, newFilenameBytes.length)
-  for (let i = 0; i < newFilenameBytes.length; i++) {
-    v.setUint8(offset++, newFilenameBytes[i])
-  }
-  
+  v.setUint8(0, 0x08); v.setUint8(1, total)
+  let off = 2
+  v.setUint8(off++, oldB.length)
+  for (let i = 0; i < oldB.length; i++) v.setUint8(off++, oldB[i])
+  v.setUint8(off++, newB.length)
+  for (let i = 0; i < newB.length; i++) v.setUint8(off++, newB[i])
   await send(b)
 }
 
-// 选择文件
-function selectFile(filename) {
-  document.getElementById('selectedFile').value = filename
-  document.getElementById('newFileName').value = filename
-  // 启用删除和重命名按钮
-  document.getElementById('btnDeleteFile').disabled = false
-  document.getElementById('btnRenameFile').disabled = false
-}
+// ── WiFi ──
 
-// 密码显示/隐藏功能
 function togglePassword() {
-  const passwordInput = document.getElementById('wifiPassword')
-  const toggleButton = document.getElementById('togglePassword')
-  if (passwordInput.type === 'password') {
-    passwordInput.type = 'text'
-    toggleButton.textContent = '👁️‍🗨️'
-  } else {
-    passwordInput.type = 'password'
-    toggleButton.textContent = '👁️'
-  }
+  const input = document.getElementById('wifiPassword')
+  const btn = document.querySelector('.toggle-vis')
+  if (!input || !btn) return
+  if (input.type === 'password') { input.type = 'text'; btn.textContent = '👁‍🗨' }
+  else { input.type = 'password'; btn.textContent = '👁' }
 }
 
-// 保存WiFi设置到本地缓存
 function saveWifiSettings(ssid, password) {
-  try {
-    const settings = { ssid, password, timestamp: Date.now() }
-    localStorage.setItem('airmic_wifi_settings', JSON.stringify(settings))
-  } catch (e) {
-    console.error('Failed to save WiFi settings:', e)
-  }
+  try { localStorage.setItem('airmic_wifi_settings', JSON.stringify({ ssid, password })) } catch (_) {}
 }
 
-// 从本地缓存加载WiFi设置
 function loadWifiSettings() {
   try {
-    const settingsStr = localStorage.getItem('airmic_wifi_settings')
-    if (settingsStr) {
-      const settings = JSON.parse(settingsStr)
-      document.getElementById('wifiSsid').value = settings.ssid || ''
-      document.getElementById('wifiPassword').value = settings.password || ''
+    const raw = localStorage.getItem('airmic_wifi_settings')
+    if (raw) {
+      const s = JSON.parse(raw)
+      document.getElementById('wifiSsid').value = s.ssid || ''
+      document.getElementById('wifiPassword').value = s.password || ''
     }
-  } catch (e) {
-    console.error('Failed to load WiFi settings:', e)
-  }
+  } catch (_) {}
 }
 
-// 播放文件
-function playFile(filename) {
-  if (!window.airmicWifiIp) {
-    setResp('respFileAction', 'ERROR: WiFi not connected', false);
-    return;
+async function cmdWifiSetup() {
+  const ssid = document.getElementById('wifiSsid').value
+  const password = document.getElementById('wifiPassword').value
+  if (!ssid) { setResp('respWifiEdit', 'SSID is required', false); return }
+
+  saveWifiSettings(ssid, password)
+  window.airmicWifiSsid = ssid
+
+  const icon = document.querySelector('.wifi-icon')
+  if (icon) icon.className = 'wifi-icon connecting'
+  document.getElementById('topIp').textContent = 'Connecting...'
+  setResp('respWifiEdit', 'Connecting...', false)
+
+  const ssidBytes = new TextEncoder().encode(ssid)
+  const pwBytes = new TextEncoder().encode(password)
+  const totalLen = 1 + ssidBytes.length + 1 + pwBytes.length
+  const b = new ArrayBuffer(2 + totalLen)
+  const v = new DataView(b)
+  v.setUint8(0, 0x05); v.setUint8(1, totalLen)
+  let off = 2
+  v.setUint8(off++, ssidBytes.length)
+  for (let i = 0; i < ssidBytes.length; i++) v.setUint8(off++, ssidBytes[i])
+  v.setUint8(off++, pwBytes.length)
+  for (let i = 0; i < pwBytes.length; i++) v.setUint8(off++, pwBytes[i])
+  await send(b)
+}
+
+// ── WiFi Polling ──
+
+let wifiPollInterval = null
+let wifiPollAttempts = 0
+const MAX_WIFI_POLL = 15
+const WIFI_POLL_MS = 2000
+
+function stopWifiPoll() {
+  if (wifiPollInterval) { clearInterval(wifiPollInterval); wifiPollInterval = null; wifiPollAttempts = 0 }
+}
+
+function startWifiPoll() {
+  stopWifiPoll()
+  wifiPollAttempts = 0
+  wifiPollInterval = setInterval(() => {
+    wifiPollAttempts++
+    cmdGetWifiStatus().catch(() => {})
+    if (wifiPollAttempts >= MAX_WIFI_POLL) {
+      stopWifiPoll()
+      setResp('respWifiEdit', 'Connection timeout', false)
+      document.querySelector('.wifi-icon')?.classList.remove('connecting')
+    }
+  }, WIFI_POLL_MS)
+}
+
+// ── File UI Operations ──
+
+function startRename(filename) {
+  const row = document.querySelector(`[data-filename="${CSS.escape(filename)}"]`)
+  if (!row) return
+  const nameEl = row.querySelector('.file-name')
+  const input = document.createElement('input')
+  input.type = 'text'; input.className = 'rename-input'; input.value = filename
+  nameEl.replaceWith(input)
+  input.focus(); input.select()
+
+  const done = (save) => {
+    if (save && input.value.trim() && input.value !== filename) {
+      row.dataset.renaming = '1'
+      cmdRenameFile(filename, input.value.trim())
+    } else {
+      const span = document.createElement('span')
+      span.className = 'file-name'; span.textContent = filename
+      span.onclick = () => startRename(filename)
+      input.replaceWith(span)
+    }
   }
-  
-  const url = `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
-  const audio = new Audio(url)
-  audio.play().catch(e => {
-    setResp('respFileAction', 'ERROR: Failed to play file', false)
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); done(true) }
+    if (e.key === 'Escape') { done(false) }
   })
-  setResp('respFileAction', `Playing: ${filename}`, true)
+  input.addEventListener('blur', () => done(true))
 }
 
-// 单请求流式下载：fetch 整个文件，服务端 chunked streaming
-async function downloadFile(filename) {
-  if (!window.airmicWifiIp) {
-    setResp('respFileAction', 'ERROR: WiFi not connected', false);
-    return;
+function startDelete(filename, btnEl) {
+  if (btnEl.dataset.confirming === 'true') {
+    btnEl.dataset.confirming = ''; btnEl.classList.remove('confirming')
+    btnEl.textContent = '✕'
+    log('Deleting: ' + filename, 'tx')
+    cmdDeleteFile(filename)
+    return
   }
+  btnEl.dataset.confirming = 'true'; btnEl.classList.add('confirming')
+  btnEl.textContent = 'OK?'
+  setTimeout(() => {
+    btnEl.dataset.confirming = ''; btnEl.classList.remove('confirming')
+    btnEl.textContent = '✕'
+  }, 3000)
+}
 
-  const startTime = Date.now();
-  const url = `http://${window.airmicWifiIp}/dl?${encodeURIComponent(filename)}`;
+// ── Play ──
 
+function playFile(filename) {
+  if (!window.airmicWifiIp) { setResp('respFileList', 'WiFi not connected', false); return }
+  new Audio(`http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`).play()
+    .catch(() => setResp('respFileList', 'Play failed', false))
+  log('Playing: ' + filename, 'ok')
+}
+
+// ── Download with Progress ──
+
+async function downloadFile(filename, size) {
+  if (!window.airmicWifiIp) { setResp('respFileList', 'WiFi not connected', false); return }
+
+  const row = document.querySelector(`[data-filename="${CSS.escape(filename)}"]`)
+  if (!row) return
+
+  const progressBar = row.querySelector('.progress-bar')
+  const progressFill = row.querySelector('.progress-fill')
+  const dlBtn = row.querySelector('.action-btn.download')
+  if (!progressBar || !dlBtn) return
+
+  dlBtn.disabled = true
+  progressBar.style.display = 'block'
+  progressFill.style.width = '0%'
+  progressFill.className = 'progress-fill'
+
+  const startTime = Date.now()
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const blob = await resp.blob();
-    if (blob.size === 0) throw new Error('empty response');
+    const resp = await fetch(`http://${window.airmicWifiIp}/dl?${encodeURIComponent(filename)}`)
+    if (!resp.ok) throw new Error('HTTP ' + resp.status)
+    if (!resp.body) throw new Error('No stream')
 
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
+    const reader = resp.body.getReader()
+    const total = size || 0
+    let received = 0
+    const chunks = []
 
-    const endTime = Date.now();
-    const duration = (endTime - startTime) / 1000;
-    const avgSpeed = (blob.size / (1024 * 1024)) / duration;
-    setResp('respFileAction', `✓ 下载完成: ${filename} (${duration.toFixed(2)}s, ${avgSpeed.toFixed(2)} MB/s)`, true);
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (value) {
+        chunks.push(value); received += value.length
+        progressFill.style.width = (total > 0 ? Math.min(100, (received / total) * 100) : Math.min(95, (received / (received + 65536)) * 100)) + '%'
+      }
+    }
+
+    progressFill.style.width = '100%'; progressFill.classList.add('done')
+    const blob = new Blob(chunks)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = filename
+    document.body.appendChild(a); a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 10000)
+
+    const elapsed = (Date.now() - startTime) / 1000
+    log(`Downloaded ${filename} (${(received/1048576).toFixed(2)} MB, ${(received/1048576/elapsed).toFixed(2)} MB/s)`, 'ok')
+
+    setTimeout(() => { progressBar.style.display = 'none'; progressFill.style.width = '0%'; progressFill.classList.remove('done'); dlBtn.disabled = false }, 2000)
   } catch (e) {
-    setResp('respFileAction', `ERROR: ${e.message}`, false);
+    progressFill.classList.add('error')
+    log('Download error: ' + e.message, 'err')
+    dlBtn.disabled = false
+    setTimeout(() => { progressBar.style.display = 'none'; progressFill.className = 'progress-fill' }, 3000)
   }
 }
 
-// 格式化文件大小
+// ── Helpers ──
+
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
+  const k = 1024, sizes = ['B','KB','MB','GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// 通过HTTP请求获取文件列表
+function escapeHtml(s) {
+  const d = document.createElement('div')
+  d.textContent = s; return d.innerHTML
+}
+
+// ── Fetch file list via HTTP ──
+
 async function fetchFileList() {
-  if (!window.airmicWifiIp) {
-    setResp('respFileList', 'WiFi not connected', false)
-    return
-  }
-  
+  if (!window.airmicWifiIp) { setResp('respFileList', 'WiFi not connected', false); return }
   try {
-    const url = `http://${window.airmicWifiIp}/files`
-    const response = await fetch(url)
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    
-    const data = await response.json()
-    
-    // 显示文件列表
-    const fileList = document.getElementById('fileList')
-    fileList.innerHTML = ''
-    
+    const resp = await fetch(`http://${window.airmicWifiIp}/files`)
+    if (!resp.ok) throw new Error('HTTP ' + resp.status)
+    const data = await resp.json()
+    const container = document.getElementById('fileList')
+    container.innerHTML = ''
+
     if (data.files && data.files.length > 0) {
       data.files.forEach(file => {
-        // 创建文件项
-        const fileItem = document.createElement('div')
-        fileItem.className = 'file-item'
-        fileItem.innerHTML = `
-          <span class="file-name">${file.name}</span>
-          <span class="file-size">${formatFileSize(file.size)}</span>
-          <div class="file-item-actions">
-            <button class="play-btn" onclick="playFile('${file.name}')">播放</button>
-            <button class="download-btn" onclick="downloadFile('${file.name}')">下载</button>
+        const row = document.createElement('div')
+        row.className = 'file-row'; row.dataset.filename = file.name
+        row.innerHTML = `
+          <div class="file-info">
+            <span class="file-name">${escapeHtml(file.name)}</span>
+            <span class="file-size">${formatFileSize(file.size)}</span>
           </div>
-        `
-        // 添加点击事件
-        fileItem.addEventListener('click', () => selectFile(file.name))
-        fileList.appendChild(fileItem)
+          <div class="file-actions">
+            <button class="action-btn play" title="Play">▶</button>
+            <button class="action-btn download" title="Download">↓</button>
+            <button class="action-btn rename" title="Rename">✎</button>
+            <button class="action-btn delete" title="Delete">✕</button>
+          </div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>`
+        row.querySelector('.play').onclick = () => playFile(file.name)
+        row.querySelector('.download').onclick = () => downloadFile(file.name, file.size)
+        row.querySelector('.rename').onclick = () => startRename(file.name)
+        row.querySelector('.delete').onclick = (e) => startDelete(file.name, e.currentTarget)
+        row.querySelector('.file-name').onclick = () => startRename(file.name)
+        container.appendChild(row)
       })
+      document.getElementById('fileCount').textContent = data.files.length + ' file' + (data.files.length !== 1 ? 's' : '')
     } else {
-      fileList.innerHTML = '<div class="no-files">No files found</div>'
+      container.innerHTML = '<div class="empty-state">No files found</div>'
+      document.getElementById('fileCount').textContent = '0 files'
     }
-    
-    log(`Fetched ${data.count} files via HTTP`, 'ok')
-  } catch (error) {
-    setResp('respFileList', `ERROR: ${error.message}`, false)
-    log(`Error fetching file list: ${error.message}`, 'err')
+    log('Fetched ' + (data.count || data.files?.length || 0) + ' files via HTTP', 'ok')
+  } catch (e) {
+    setResp('respFileList', 'ERROR: ' + e.message, false)
+    log('Fetch error: ' + e.message, 'err')
   }
 }
 
-// 全局变量用于跟踪WiFi状态轮询
-let wifiPollInterval = null;
-let wifiPollAttempts = 0;
-const MAX_WIFI_POLL_ATTEMPTS = 15; // 最多15次，每次2秒，总共30秒
-const WIFI_POLL_INTERVAL = 2000; // 每2秒检查一次
+// ── BLE Notification Handler ──
 
-// 停止WiFi状态轮询
-function stopWifiPolling() {
-  if (wifiPollInterval) {
-    clearInterval(wifiPollInterval);
-    wifiPollInterval = null;
-    wifiPollAttempts = 0;
-  }
+function setWifiConnected(ip) {
+  window.airmicWifiIp = ip || null
+  const icon = document.querySelector('.wifi-icon')
+  if (icon) icon.className = 'wifi-icon' + (ip ? ' connected' : '')
+  document.getElementById('topIp').textContent = ip || '--'
+  document.getElementById('aboutIp').textContent = ip || '--'
 }
 
-// 开始WiFi状态轮询
-function startWifiPolling() {
-  stopWifiPolling(); // 确保没有重复的轮询
-  wifiPollAttempts = 0;
-  
-  wifiPollInterval = setInterval(async () => {
-    wifiPollAttempts++;
-    
-    try {
-      await cmdGetWifiStatus();
-    } catch (e) {
-      console.error('WiFi status poll error:', e);
-    }
-    
-    // 如果达到最大尝试次数，停止轮询
-    if (wifiPollAttempts >= MAX_WIFI_POLL_ATTEMPTS) {
-      stopWifiPolling();
-      setResp('respWifi', 'ERROR - WiFi connection timeout', false);
-    }
-  }, WIFI_POLL_INTERVAL);
-}
-
-// WiFi设置命令
-async function cmdWifiSetup() {
-  const ssid = document.getElementById('wifiSsid').value
-  const password = document.getElementById('wifiPassword').value
-  
-  if (!ssid) {
-    setResp('respWifi', 'ERROR: SSID is required', false)
-    return
-  }
-  
-  // 保存到本地缓存
-  saveWifiSettings(ssid, password)
-  
-  // 构建WiFi设置命令
-  // 格式: [0x05, payload_len, ssid_len, ssid, password_len, password]
-  const ssidBytes = new TextEncoder().encode(ssid)
-  const passwordBytes = new TextEncoder().encode(password)
-  const totalLen = 1 + ssidBytes.length + 1 + passwordBytes.length
-  
-  const b = new ArrayBuffer(2 + totalLen)
-  const v = new DataView(b)
-  v.setUint8(0, 0x05)
-  v.setUint8(1, totalLen)
-  
-  let offset = 2
-  v.setUint8(offset++, ssidBytes.length)
-  for (let i = 0; i < ssidBytes.length; i++) {
-    v.setUint8(offset++, ssidBytes[i])
-  }
-  v.setUint8(offset++, passwordBytes.length)
-  for (let i = 0; i < passwordBytes.length; i++) {
-    v.setUint8(offset++, passwordBytes[i])
-  }
-  
-  await send(b)
-}
-
-// 收到通知处理
 function onNotify(e) {
   const d = new Uint8Array(e.target.value.buffer)
   const hex = Array.from(d).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')
-  log('← ' + hex, 'rx')
+  log('RX ← ' + hex, 'rx')
 
   const cmd = d[0], ok = d[1] === 0
 
-  if (cmd === 0x01) {
-    setResp('respSync', ok ? 'OK - TIME SYNCED' : 'ERROR', ok)
-  }
-  if (cmd === 0x02) setResp('respSync', ok ? 'OK - RATE SET' : 'ERROR', ok)
-  if (cmd === 0x03) setResp('respSync', ok ? 'OK - CH SET' : 'ERROR', ok)
+  if (cmd === 0x01)  setResp('respSync', ok ? 'Time synced' : 'ERROR', ok)
+  if (cmd === 0x02)  setResp('respSync', ok ? 'Rate set' : 'ERROR', ok)
+  if (cmd === 0x03)  setResp('respSync', ok ? 'Channels set' : 'ERROR', ok)
+
   if (cmd === 0x04 && ok) {
     const ts = d[3] | (d[4] << 8) | (d[5] << 16) | (d[6] << 24)
     setResp('respStat', 'REC=' + d[2] + '  TIME=' + new Date(ts * 1000).toISOString(), true)
   }
+
   if (cmd === 0x05) {
-    setResp('respWifi', ok ? 'OK - WIFI SETUP STARTED' : 'ERROR', ok)
-    // WiFi设置成功后，开始轮询WiFi状态直到连接成功或超时
-    if (ok) {
-      startWifiPolling();
-    }
+    setResp('respWifiEdit', ok ? 'Connecting...' : 'ERROR', ok)
+    if (ok) startWifiPoll()
   }
+
   if (cmd === 0x06) {
     if (ok) {
-      // 解析文件总数
-      let offset = 2 // 跳过命令码和状态码
-      const fileCount = d[offset++] | (d[offset++] << 8)
-      
-      setResp('respFileList', `OK - ${fileCount} files found`, true)
-      
-      // 通过HTTP请求获取详细文件列表
-      if (window.airmicWifiIp) {
-        fetchFileList()
-      } else {
-        setResp('respFileList', 'WiFi not connected, cannot get file details', false)
+      let offset = 2
+      const count = d[offset++] | (d[offset++] << 8)
+      setResp('respFileList', count + ' file' + (count !== 1 ? 's' : '') + ' found', true)
+      if (window.airmicWifiIp) { fetchFileList() }
+      else {
+        document.getElementById('fileList').innerHTML = '<div class="empty-state">WiFi not connected<br><span class="hint">Cannot fetch file details</span></div>'
       }
     } else {
-      setResp('respFileList', 'ERROR - Failed to get file count', false)
-      document.getElementById('fileList').innerHTML = ''
+      setResp('respFileList', 'Failed to get file list', false)
+      document.getElementById('fileList').innerHTML = '<div class="empty-state">Failed to load files</div>'
+      document.getElementById('fileCount').textContent = ''
     }
   }
+
   if (cmd === 0x07) {
-    if (ok) {
-      setResp('respFileAction', 'OK - File deleted successfully', true)
-      // 重新获取文件列表
-      setTimeout(cmdGetFileList, 500)
-    } else {
-      setResp('respFileAction', 'ERROR - Failed to delete file', false)
-    }
+    if (ok) { setResp('respFileList', 'File deleted', true); setTimeout(cmdGetFileList, 500) }
+    else { setResp('respFileList', 'Delete failed', false) }
+    document.querySelectorAll('.file-row[data-renaming]').forEach(el => delete el.dataset.renaming)
   }
+
   if (cmd === 0x08) {
-    if (ok) {
-      setResp('respFileAction', 'OK - File renamed successfully', true)
-      // 重新获取文件列表
-      setTimeout(cmdGetFileList, 500)
-    } else {
-      setResp('respFileAction', 'ERROR - Failed to rename file', false)
-    }
+    if (ok) { setResp('respFileList', 'File renamed', true); setTimeout(cmdGetFileList, 500) }
+    else { setResp('respFileList', 'Rename failed', false) }
+    document.querySelectorAll('.file-row[data-renaming]').forEach(el => delete el.dataset.renaming)
   }
+
   if (cmd === 0x09) {
     if (ok) {
-      let offset = 2 // 跳过命令码和状态码
+      let offset = 2
       const status = d[offset++]
       const ipLen = d[offset++]
       let ip = ''
-      if (ipLen > 0) {
-        ip = new TextDecoder().decode(d.slice(offset, offset + ipLen))
-      }
-      
-      // 状态值: 0=未连接, 1=已连接但无IP, 2=已连接且有IP
-      let statusText, isConnected;
+      if (ipLen > 0) ip = new TextDecoder().decode(d.slice(offset, offset + ipLen))
+
       if (status === 2) {
-        statusText = `OK - Connected, IP: ${ip}`;
-        isConnected = true;
-        // WiFi连接成功，停止轮询
-        stopWifiPolling();
+        if (!window.airmicWifiSsid) {
+          try { const s = JSON.parse(localStorage.getItem('airmic_wifi_settings')); if (s?.ssid) window.airmicWifiSsid = s.ssid } catch(_) {}
+        }
+        setWifiConnected(ip)
+        setResp('respWifiEdit', 'Connected (' + ip + ')', true)
+        stopWifiPoll()
+        // Switch to Files tab on success
+        document.querySelector('[data-tab="files"]')?.click()
+        if (ip) setTimeout(cmdGetFileList, 800)
       } else if (status === 1) {
-        statusText = 'WARNING - WiFi Connected but No IP Address';
-        isConnected = false;
-        // 继续轮询，可能还在获取IP
+        setResp('respWifiEdit', 'Obtaining IP...', false)
       } else {
-        statusText = 'ERROR - Not connected';
-        isConnected = false;
-        // 继续轮询，可能还在连接中
-      }
-      
-      setResp('respWifi', statusText, status === 2);
-      // 只有当WiFi连接且有IP地址时，才设置全局变量
-      if (status === 2 && ipLen > 0) {
-        window.airmicWifiIp = ip;
-      } else {
-        window.airmicWifiIp = null;
+        setWifiConnected(null)
+        setResp('respWifiEdit', 'Not connected. Check SSID/password.', false)
       }
     } else {
-      setResp('respWifi', 'ERROR - Failed to get WiFi status', false);
-      window.airmicWifiIp = null;
-      // 出错时也停止轮询
-      stopWifiPolling();
+      setWifiConnected(null)
+      setResp('respWifiEdit', 'Failed to get WiFi status', false)
+      stopWifiPoll()
     }
   }
 }

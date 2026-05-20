@@ -1,136 +1,166 @@
 <!DOCTYPE html>
 <html lang="zh">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>AirMic Control</title>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
-  <header>
-    <span class="title">AirMic</span>
-    <div class="subtitle">FPV AUDIO MODULE // BLE CONTROLLER</div>
-  </header>
-
-  <!-- 连接 -->
-  <div class="pixel-box">
-    <div class="card-label">BLUETOOTH</div>
-    <div class="status-bar">
-      <div class="pixel-led" id="led"></div>
-      <span class="status-text" id="stText">NOT CONNECTED</span>
-    </div>
-    <button class="px-btn" id="btnConn" onclick="toggleConnect()">
-      [ SCAN &amp; CONNECT ]
-    </button>
+<!-- ─── Fixed Top Bar ─── -->
+<header class="top-bar">
+  <div class="top-left">
+    <div class="brand">AirMic</div>
+    <div class="subtitle">FPV AUDIO MODULE</div>
   </div>
-
-  <!-- WiFi 设置 -->
-  <div class="pixel-box">
-    <div class="card-label">WIFI SETUP CMD:0x05</div>
-    <div class="field">
-      <label>SSID</label>
-      <input type="text" id="wifiSsid">
+  <div class="top-right">
+    <div class="top-conn" id="topConn" onclick="toggleConnect()">
+      <span class="top-led" id="topLed"></span>
+      <span class="top-status" id="topStatus">NOT CONNECTED</span>
+      <span class="top-device" id="topDevice"></span>
     </div>
-    <div class="field">
-      <label>PASSWORD</label>
-      <div>
-        <input type="password" id="wifiPassword">
-        <button type="button" id="togglePassword" onclick="togglePassword()">👁️</button>
-      </div>
+    <div class="top-wifi" id="topWifi">
+      <svg class="wifi-icon" viewBox="0 0 24 24" width="16" height="16">
+        <circle cx="12" cy="19" r="2" fill="currentColor"/>
+        <path d="M7 15a6 6 0 0 1 10 0" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M3.5 11a11 11 0 0 1 17 0" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M0 7a15.5 15.5 0 0 1 24 0" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <span class="top-ip" id="topIp">--</span>
     </div>
-    <button class="px-btn blue" id="btnWifi" onclick="cmdWifiSetup()" disabled>[ SEND ]</button>
-    <div class="resp" id="respWifi">—</div>
   </div>
+</header>
 
-  <!-- 文件浏览 -->
-  <div class="pixel-box">
-    <div class="card-label">FILE BROWSER CMD:0x06</div>
-    <button class="px-btn green" id="btnFileList" onclick="cmdGetFileList()" disabled>[ GET FILE LIST ]</button>
-    <div class="resp" id="respFileList">—</div>
+<!-- ─── Tab Bar ─── -->
+<nav class="tab-bar" id="tabBar">
+  <button class="tab active" data-tab="files">Files</button>
+  <button class="tab" data-tab="settings">Settings</button>
+  <button class="tab" data-tab="ota">OTA</button>
+  <button class="tab" data-tab="about">About</button>
+</nav>
+
+<!-- ─── Tab Content ─── -->
+<main class="content">
+
+  <!-- === Files Tab === -->
+  <div class="tab-pane active" id="tab-files">
+    <div class="file-toolbar">
+      <button class="btn btn-ghost btn-sm" id="btnFileList" onclick="cmdGetFileList()">Refresh</button>
+      <span class="file-count" id="fileCount"></span>
+    </div>
     <div class="file-list" id="fileList">
-      <!-- 文件列表将在这里动态生成 -->
-    </div>
-    <div class="file-actions">
-      <div class="field">
-        <label>SELECTED FILE</label>
-        <input type="text" id="selectedFile" readonly>
-      </div>
-      <div class="field">
-        <label>NEW NAME</label>
-        <input type="text" id="newFileName">
-      </div>
-      <div class="row2">
-        <button class="px-btn red" id="btnDeleteFile" onclick="cmdDeleteFile()" disabled>[ DELETE ]</button>
-        <button class="px-btn blue" id="btnRenameFile" onclick="cmdRenameFile()" disabled>[ RENAME ]</button>
-      </div>
-      <div class="resp" id="respFileAction">—</div>
-    </div>
-  </div>
-
-  <div class="pixel-box">
-    <div class="card-label">OTA UPGRADE</div>
-    <div id="otaStatus">—</div>
-    <button id="btnOta" class="px-btn" onclick="openOta()">[ OPEN OTA PAGE ]</button>
-  </div>
-
-  <!-- 时间同步 -->
-  <div class="pixel-box">
-    <div class="card-label">TIME SYNC CMD:0x01</div>
-    <div class="clock" id="clock">--:--:--</div>
-    <div class="clock-date" id="cdate">---- -- --</div>
-    <button class="px-btn green" id="btnSync" onclick="cmdTimeSync()" disabled>
-      [ SYNC TIME → DEVICE ]
-    </button>
-    <div class="resp" id="respSync">—</div>
-  </div>
-
-  <!-- 音频参数 -->
-  <div class="pixel-box">
-    <div class="card-label">AUDIO CONFIG CMD:0x02/0x03</div>
-    <div class="row2">
-      <div class="field">
-        <label>SAMPLE RATE</label>
-        <select id="selRate">
-          <option value="8000">8000 HZ</option>
-          <option value="16000">16000 HZ</option>
-          <option value="48000" selected>48000 HZ</option>
-        </select>
-        <button class="px-btn blue" onclick="cmdSampleRate()" id="btnRate" disabled>[ SEND
-          ]</button>
-      </div>
-      <div class="field">
-        <label>CHANNELS</label>
-        <select id="selCh">
-          <option value="1">MONO</option>
-          <option value="2" selected>STEREO</option>
-        </select>
-        <button class="px-btn blue" onclick="cmdChannels()" id="btnCh" disabled>[ SEND
-          ]</button>
+      <div class="empty-state" id="fileEmpty">
+        Connect BLE and WiFi to browse files
+        <div class="hint">File list loads automatically when connected</div>
       </div>
     </div>
+    <div class="resp-msg" id="respFileList">&mdash;</div>
   </div>
 
-  <!-- 状态查询 -->
-  <div class="pixel-box">
-    <div class="card-label">DEVICE STATUS CMD:0x04</div>
-    <button class="px-btn" id="btnStat" onclick="cmdGetStatus()" disabled>
-      [ QUERY STATUS ]
-    </button>
-    <div class="resp" id="respStat">—</div>
+  <!-- === Settings Tab === -->
+  <div class="tab-pane" id="tab-settings">
+
+    <div class="setting-group">
+      <div class="setting-title">WiFi Setup</div>
+      <div class="field-group">
+        <input type="text" id="wifiSsid" placeholder="SSID">
+      </div>
+      <div class="field-group">
+        <div class="input-wrap">
+          <input type="password" id="wifiPassword" placeholder="Password">
+          <button type="button" class="toggle-vis" onclick="togglePassword()">&#x1f441;</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-primary btn-sm" id="btnWifi" onclick="cmdWifiSetup()" disabled>Connect WiFi</button>
+      </div>
+      <div class="resp-msg" id="respWifiEdit">&mdash;</div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-title">Time Sync</div>
+      <div class="clock-display" id="clock">--:--:--</div>
+      <div class="clock-date" id="cdate">---- -- --</div>
+      <button class="btn btn-secondary btn-sm" id="btnSync" onclick="cmdTimeSync()" disabled>Sync Time</button>
+      <div class="resp-msg" id="respSync">&mdash;</div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-title">Audio Config</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Sample Rate</label>
+          <select id="selRate">
+            <option value="8000">8000 Hz</option>
+            <option value="16000">16000 Hz</option>
+            <option value="48000" selected>48000 Hz</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="cmdSampleRate()" id="btnRate" disabled style="margin-top:6px">Apply</button>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Channels</label>
+          <select id="selCh">
+            <option value="1">Mono</option>
+            <option value="2" selected>Stereo</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="cmdChannels()" id="btnCh" disabled style="margin-top:6px">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-title">Device Status</div>
+      <button class="btn btn-secondary btn-sm" id="btnStat" onclick="cmdGetStatus()" disabled>Query Status</button>
+      <div class="resp-msg" id="respStat">&mdash;</div>
+    </div>
+
   </div>
 
-  <!-- 日志 -->
-  <div class="pixel-box">
-    <div class="card-label">LOG</div>
-    <div class="log" id="logBox"></div>
+  <!-- === OTA Tab === -->
+  <div class="tab-pane" id="tab-ota">
+    <div class="setting-group">
+      <div class="setting-title">OTA Upgrade</div>
+      <div class="ota-status" id="otaStatus">Firmware upgrade via WiFi</div>
+      <button class="btn btn-secondary btn-sm" id="btnOta" onclick="openOta()" disabled>Open OTA Page</button>
+    </div>
   </div>
 
-  <script src="protocol.js"></script>
-  <script src="main.js"></script>
+  <!-- === About Tab === -->
+  <div class="tab-pane" id="tab-about">
+    <div class="setting-group">
+      <div class="setting-title">AirMic</div>
+      <div class="about-info">
+        <div class="about-row"><span class="about-label">Device</span><span id="aboutDevice">--</span></div>
+        <div class="about-row"><span class="about-label">BLE Status</span><span id="aboutBle">--</span></div>
+        <div class="about-row"><span class="about-label">WiFi IP</span><span id="aboutIp">--</span></div>
+        <div class="about-row"><span class="about-label">Version</span><span id="aboutVer">rev0.2</span></div>
+      </div>
+    </div>
+    <div class="setting-group">
+      <div class="setting-title">Help</div>
+      <div class="help-text">
+        <p>Connect via BLE to configure your AirMic module. Use the Files tab to browse, play, download, rename, or delete recordings from the SD card.</p>
+        <p>WiFi is required for file transfers and OTA updates.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ─── Collapsible Log ─── -->
+<div class="log-bar" id="logBar">
+  <div class="log-bar-header" onclick="toggleLog()">
+    <span>Log</span>
+    <span class="log-badge" id="logBadge">0</span>
+    <span class="log-toggle" id="logToggle">&#x25B4;</span>
+  </div>
+  <div class="log-content" id="logBox"></div>
+</div>
+
+<script src="protocol.js"></script>
+<script src="main.js"></script>
 </body>
-
 </html>

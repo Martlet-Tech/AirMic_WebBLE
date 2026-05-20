@@ -1,31 +1,61 @@
-// ── 主逻辑 ────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────
 
-// 页面加载时加载WiFi设置
 window.onload = function() {
   loadWifiSettings()
 }
 
-// 时钟
+// ── Tab Switching ──
+
+document.getElementById('tabBar').addEventListener('click', (e) => {
+  const tab = e.target.closest('.tab')
+  if (!tab) return
+
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'))
+  tab.classList.add('active')
+  const pane = document.getElementById('tab-' + tab.dataset.tab)
+  if (pane) pane.classList.add('active')
+})
+
+// ── Log Toggle ──
+
+function toggleLog() {
+  document.getElementById('logBar').classList.toggle('open')
+}
+
+// ── Clock ──
+
 setInterval(() => {
   const n = new Date()
   document.getElementById('clock').textContent = n.toTimeString().slice(0, 8)
   document.getElementById('cdate').textContent = n.toISOString().slice(0, 10)
 }, 500)
 
-// 日志
+// ── Logger ──
+
+let logCount = 0
+
 function log(msg, type = '') {
   const box = document.getElementById('logBox')
   const t = new Date().toTimeString().slice(0, 8)
-  box.innerHTML += `<div class="log-row"><span class="lt">${t}</span><span class="lm ${type}">${msg}</span></div>`
+  box.innerHTML += `<div class="log-row"><span class="log-time">${t}</span><span class="log-msg ${type}">${msg}</span></div>`
   box.scrollTop = box.scrollHeight
+  logCount++
+  document.getElementById('logBadge').textContent = logCount
+  // Auto-open log on first error
+  if (type === 'err') {
+    document.getElementById('logBar').classList.add('open')
+  }
 }
 
-// 连接管理
+// ── BLE Connection ──
+
 async function toggleConnect() {
-  if (device?.gatt.connected) { device.gatt.disconnect(); return }
+  if (device?.gatt?.connected) { device.gatt.disconnect(); return }
 
   try {
-    log('scanning for AirMic...', 'tx')
+    log('Scanning for AirMic...', 'tx')
+    topBarConnecting(true)
     device = await navigator.bluetooth.requestDevice({
       filters: [{ name: 'Martlet AirMic' }],
       optionalServices: [SVC_AIRMIC]
@@ -33,56 +63,94 @@ async function toggleConnect() {
     device.addEventListener('gattserverdisconnected', onDisc)
 
     const server = await device.gatt.connect()
-    log('connected: ' + device.name, 'ok')
+    log('Connected: ' + device.name, 'ok')
 
     const svc = await server.getPrimaryService(SVC_AIRMIC)
     ctrlChar = await svc.getCharacteristic(CHAR_CTRL)
     const resp = await svc.getCharacteristic(CHAR_RESP)
     await resp.startNotifications()
     resp.addEventListener('characteristicvaluechanged', onNotify)
-    log('notifications ready', 'ok')
+    log('Notifications ready', 'ok')
     setUI(true)
   } catch (e) {
-    log('error: ' + e.message, 'err')
+    log('Error: ' + e.message, 'err')
     setUI(false)
+  } finally {
+    topBarConnecting(false)
+  }
+}
+
+function topBarConnecting(connecting) {
+  const el = document.getElementById('topConn')
+  if (connecting) {
+    el.style.pointerEvents = 'none'
+    el.style.opacity = '0.5'
+  } else {
+    el.style.pointerEvents = ''
+    el.style.opacity = ''
   }
 }
 
 function onDisc() {
-  log('disconnected', 'err')
+  log('Disconnected', 'err')
   setUI(false)
 }
 
-// UI控制
+// ── UI State ──
+
 function setUI(on) {
-  document.getElementById('led').className = 'pixel-led' + (on ? ' on' : '')
-  document.getElementById('stText').className = 'status-text' + (on ? ' on' : '')
-  document.getElementById('stText').textContent = on ? 'CONNECTED' : 'NOT CONNECTED'
-  document.getElementById('btnConn').className = on ? 'px-btn red' : 'px-btn'
-  document.getElementById('btnConn').textContent = on ? '[ DISCONNECT ]' : '[ SCAN & CONNECT ]'
-    ;['btnSync', 'btnRate', 'btnCh', 'btnStat', 'btnWifi', 'btnFileList', 'btnOta'].forEach(id => {
-      document.getElementById(id).disabled = !on
-    })
-  // 重置文件操作按钮状态
-  document.getElementById('selectedFile').value = ''
-  document.getElementById('newFileName').value = ''
-  document.getElementById('btnDeleteFile').disabled = true
-  document.getElementById('btnRenameFile').disabled = true
-  document.getElementById('respFileAction').textContent = '—'
-  document.getElementById('respFileAction').className = 'resp'
-  
-  // 连接成功后获取WiFi状态
+  const led = document.getElementById('topLed')
+  const st = document.getElementById('topStatus')
+  const deviceEl = document.getElementById('topDevice')
+
+  led.className = 'top-led' + (on ? ' connected' : '')
+  st.className = 'top-status' + (on ? ' connected' : '')
+  st.textContent = on ? 'CONNECTED' : 'NOT CONNECTED'
+  deviceEl.textContent = on && device?.name ? device.name : ''
+
+  // Enable/disable BLE-dependent buttons
+  const ids = ['btnSync', 'btnRate', 'btnCh', 'btnStat', 'btnWifi', 'btnFileList', 'btnOta']
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = !on })
+
+  // Reset file panel on disconnect
+  if (!on) {
+    document.getElementById('fileCount').textContent = ''
+    document.getElementById('respFileList').innerHTML = '&mdash;'
+    document.getElementById('respFileList').className = 'resp-msg'
+    document.getElementById('fileList').innerHTML =
+      '<div class="empty-state">Connect BLE and WiFi to browse files' +
+      '<div class="hint">File list loads automatically when connected</div></div>'
+  }
+
+  // About tab
+  document.getElementById('aboutBle').textContent = on ? 'Connected' : 'Disconnected'
+
   if (on) {
     setTimeout(cmdGetWifiStatus, 1000)
+  } else {
+    wifiReset()
   }
 }
 
-// 响应显示
+function wifiReset() {
+  window.airmicWifiIp = null
+  window.airmicWifiSsid = null
+  stopWifiPoll()
+  document.getElementById('topIp').textContent = '--'
+  document.querySelector('.wifi-icon').className = 'wifi-icon'
+  document.getElementById('aboutIp').textContent = '--'
+}
+
+// ── Response Display ──
+
 function setResp(id, msg, ok) {
   const el = document.getElementById(id)
-  el.textContent = msg
-  el.className = 'resp ' + (ok ? 'ok' : 'err')
+  if (!el) return
+  el.innerHTML = msg
+  el.className = 'resp-msg' + (ok !== undefined ? (ok ? ' ok' : ' err') : '')
 }
+
+// ── OTA ──
 
 function openOta() {
   if (!window.airmicWifiIp) {
@@ -90,5 +158,5 @@ function openOta() {
     return
   }
   window.open(`http://${window.airmicWifiIp}/ota`, '_blank')
-  log('opened OTA page: ' + window.airmicWifiIp, 'ok')
+  log('Opened OTA page: ' + window.airmicWifiIp, 'ok')
 }
