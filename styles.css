@@ -3,11 +3,11 @@
   --bg-secondary: #111827;
   --bg-tertiary: #1a2236;
   --bg-hover: #1f2a42;
-  --border: #1e293b;
-  --border-light: #2a3a54;
+  --border: #2a3a54;
+  --border-light: #3a4e6c;
   --text-primary: #e2e8f0;
   --text-secondary: #8892a8;
-  --text-muted: #4a5578;
+  --text-muted: #7a8aa8;
   --amber: #f5a623;
   --amber-dim: rgba(245, 166, 35, 0.12);
   --teal: #2dd4bf;
@@ -129,7 +129,11 @@ body {
   gap: 5px;
   color: var(--text-muted);
 }
-.top-wifi .wifi-icon.connected { color: var(--teal); }
+.top-wifi .wifi-icon.connected {
+  color: var(--teal);
+  filter: drop-shadow(0 0 5px var(--teal));
+  animation: ledPulse 2.5s ease-in-out infinite;
+}
 .top-wifi .wifi-icon.connecting { color: var(--amber); animation: wifiPulse 1s ease-in-out infinite; }
 
 @keyframes wifiPulse { 0%,100%{opacity:0.4} 50%{opacity:1} }

@@ -116,7 +116,7 @@ async function cmdWifiSetup() {
   window.airmicWifiSsid = ssid
 
   const icon = document.querySelector('.wifi-icon')
-  if (icon) icon.className = 'wifi-icon connecting'
+  if (icon) icon.setAttribute('class', 'wifi-icon connecting')
   document.getElementById('topIp').textContent = 'Connecting...'
   setResp('respWifiEdit', 'Connecting...', false)
 
@@ -337,7 +337,7 @@ async function fetchFileList() {
 function setWifiConnected(ip) {
   window.airmicWifiIp = ip || null
   const icon = document.querySelector('.wifi-icon')
-  if (icon) icon.className = 'wifi-icon' + (ip ? ' connected' : '')
+  if (icon) icon.setAttribute('class', 'wifi-icon' + (ip ? ' connected' : ''))
   document.getElementById('topIp').textContent = ip || '--'
   document.getElementById('aboutIp').textContent = ip || '--'
   document.getElementById('btnOta').disabled = !ip

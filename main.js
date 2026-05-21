@@ -137,7 +137,7 @@ function wifiReset() {
   window.airmicWifiSsid = null
   stopWifiPoll()
   document.getElementById('topIp').textContent = '--'
-  document.querySelector('.wifi-icon').className = 'wifi-icon'
+  document.querySelector('.wifi-icon')?.setAttribute('class', 'wifi-icon')
   document.getElementById('aboutIp').textContent = '--'
   document.getElementById('btnOta').disabled = true
 }
