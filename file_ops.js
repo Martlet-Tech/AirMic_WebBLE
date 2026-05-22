@@ -53,6 +53,19 @@ async function fetchFileList() {
         row.querySelector('.delete').onclick = (e) => startDelete(file.name, e.currentTarget)
         container.appendChild(row)
       })
+      // Restore playing state after re-render
+      if (s_playingFile) {
+        const activeRow = container.querySelector(`[data-filename="${CSS.escape(s_playingFile)}"]`)
+        if (activeRow) {
+          const activeBtn = activeRow.querySelector('.action-btn.play')
+          if (activeBtn) { activeBtn.textContent = '⏹'; activeBtn.classList.add('playing') }
+          activeRow.classList.add('playing')
+          s_playingRow = activeRow
+        } else {
+          // Playing file was deleted or disappeared
+          playerStop()
+        }
+      }
       document.getElementById('fileCount').textContent = data.files.length + ' file' + (data.files.length !== 1 ? 's' : '')
     } else {
       container.innerHTML = '<div class="empty-state">No files found</div>'
@@ -156,14 +169,307 @@ function deleteAllFiles(btnEl) {
   }, 3000)
 }
 
-// ── Play ──
+// ── Player Singleton ──
+
+let s_player = null
+let s_playingFile = null
+let s_playingRow = null
+let s_audioCtx = null
+let s_analyser = null
+let s_animFrame = null
+
+function formatTime(sec) {
+  if (isNaN(sec) || sec < 0) return '00:00'
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0')
+}
+
+function clearPlayerState() {
+  if (s_playingRow) {
+    const btn = s_playingRow.querySelector('.action-btn.play')
+    if (btn) { btn.textContent = '▶'; btn.classList.remove('playing') }
+    s_playingRow.classList.remove('playing')
+    s_playingRow = null
+  }
+  s_playingFile = null
+}
+
+function stopVUMeter() {
+  if (s_animFrame) { cancelAnimationFrame(s_animFrame); s_animFrame = null }
+  if (s_audioCtx) {
+    s_audioCtx.close().catch(() => {})
+    s_audioCtx = null
+    s_analyser = null
+  }
+  const canvas = document.getElementById('pVU')
+  if (canvas) {
+    const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+  }
+}
+
+function initVUCanvas() {
+  const canvas = document.getElementById('pVU')
+  if (!canvas) return
+  const rect = canvas.getBoundingClientRect()
+  const dpr = window.devicePixelRatio || 1
+  const w = rect.width || canvas.parentElement.clientWidth || 400
+  const h = rect.height || canvas.parentElement.clientHeight || 28
+  canvas.width = w * dpr
+  canvas.height = h * dpr
+  canvas.style.width = w + 'px'
+  canvas.style.height = h + 'px'
+  return { canvas, ctx: canvas.getContext('2d'), w, h, dpr }
+}
+
+function drawVUMeterIdle() {
+  const c = initVUCanvas()
+  if (!c) return
+  const { canvas, ctx, w, h, dpr } = c
+  ctx.scale(dpr, dpr)
+  ctx.clearRect(0, 0, w, h)
+
+  const barCount = 28, gap = 2
+  const barW = (w - gap * (barCount - 1)) / barCount
+
+  ctx.fillStyle = 'rgba(245,166,35,0.04)'
+  for (let i = 0; i < barCount; i++) {
+    const x = i * (barW + gap)
+    ctx.fillRect(x, h - 3, barW, 3)
+  }
+}
+
+function startVUMeter() {
+  const c = initVUCanvas()
+  if (!c) return
+  const { canvas, ctx, w, h, dpr } = c
+
+  if (!s_analyser) {
+    drawVUMeterIdle()
+    return
+  }
+
+  const data = new Uint8Array(s_analyser.frequencyBinCount)
+  const barCount = 28
+  const gap = 2
+  const barW = (w - gap * (barCount - 1)) / barCount
+
+  function render() {
+    ctx.save()
+    ctx.scale(dpr, dpr)
+    ctx.clearRect(0, 0, w, h)
+
+    s_analyser.getByteFrequencyData(data)
+
+    for (let i = 0; i < barCount; i++) {
+      const binStart = Math.floor(i * data.length / barCount)
+      const binEnd = Math.floor((i + 1) * data.length / barCount)
+      let sum = 0
+      for (let j = binStart; j < binEnd; j++) sum += data[j]
+      const pct = Math.min(1, (sum / (binEnd - binStart)) / 255 * 1.8)
+
+      const barH = Math.max(1, Math.round(pct * h))
+      const x = i * (barW + gap)
+      const y = h - barH
+
+      if (pct > 0.75)      ctx.fillStyle = '#ef4444'
+      else if (pct > 0.5)  ctx.fillStyle = '#f5a623'
+      else if (pct > 0.12) ctx.fillStyle = '#2dd4bf'
+      else                  ctx.fillStyle = 'rgba(45,212,191,0.15)'
+
+      ctx.fillRect(x, y, barW, barH)
+    }
+
+    ctx.restore()
+    s_animFrame = requestAnimationFrame(render)
+  }
+
+  render()
+}
+
+function updatePlayerUI() {
+  const bar = document.getElementById('playerBar')
+  const fill = document.getElementById('pFill')
+  const thumb = document.getElementById('pThumb')
+  const timeEl = document.getElementById('pTime')
+  const playBtn = document.getElementById('pBtnPlay')
+  if (!bar || !fill || !timeEl || !playBtn) return
+
+  if (!s_player || !s_playingFile) {
+    bar.style.display = 'none'
+    stopVUMeter()
+    return
+  }
+
+  bar.style.display = 'flex'
+  document.getElementById('pFilename').textContent = s_playingFile
+
+  const cur = s_player.currentTime || 0
+  const dur = s_player.duration
+  const hasDur = isFinite(dur) && dur > 0
+
+  if (hasDur) {
+    timeEl.textContent = formatTime(cur) + ' / ' + formatTime(dur)
+    const pct = (cur / dur) * 100
+    fill.style.width = pct + '%'
+    thumb.style.left = pct + '%'
+  } else {
+    // Duration unknown (AAC streaming without Content-Length)
+    timeEl.textContent = formatTime(cur) + ' / --:--'
+    fill.style.width = '100%'
+    fill.style.opacity = '0.15'
+    thumb.style.left = '-999px'
+  }
+
+  playBtn.textContent = s_player.paused ? '▶' : '⏸'
+}
+
+function playerStop() {
+  stopVUMeter()
+  if (s_player) {
+    s_player.pause()
+    s_player.src = ''
+    s_player.load()
+    s_player = null
+  }
+  clearPlayerState()
+  updatePlayerUI()
+  log('Stopped', '')
+}
+
+function playerTogglePause() {
+  if (!s_player || !s_playingFile) return
+  if (s_player.paused) {
+    s_player.play().catch(() => playerStop())
+    startVUMeter()
+  } else {
+    s_player.pause()
+    stopVUMeter()
+    drawVUMeterIdle()
+  }
+  updatePlayerUI()
+}
+
+function playerSeek(e) {
+  if (!s_player) return
+  const wrap = document.getElementById('pProgWrap')
+  if (!wrap) return
+  const rect = wrap.getBoundingClientRect()
+  const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left
+  const pct = Math.max(0, Math.min(1, x / rect.width))
+  if (!isNaN(s_player.duration)) {
+    s_player.currentTime = pct * s_player.duration
+  }
+}
+
+function playerSetVolume(v) {
+  if (s_player) s_player.volume = v
+}
+
+function getFileNames() {
+  return Array.from(document.querySelectorAll('#fileList .file-row'))
+    .map(r => r.dataset.filename)
+    .filter(Boolean)
+}
+
+function playerPrev() {
+  if (!s_playingFile) return
+  const names = getFileNames()
+  const idx = names.indexOf(s_playingFile)
+  if (idx > 0) playFile(names[idx - 1])
+}
+
+function playerNext() {
+  if (!s_playingFile) return
+  const names = getFileNames()
+  const idx = names.indexOf(s_playingFile)
+  if (idx < names.length - 1) playFile(names[idx + 1])
+}
 
 function playFile(filename) {
   if (!window.airmicWifiIp) { setResp('respFileList', 'WiFi not connected', false); return }
-  new Audio(`http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`).play()
-    .catch(() => setResp('respFileList', 'Play failed', false))
+
+  // Same file → toggle pause
+  if (s_playingFile === filename) { playerTogglePause(); return }
+
+  // Different file → stop current, start new
+  playerStop()
+
+  const row = document.querySelector(`[data-filename="${CSS.escape(filename)}"]`)
+  if (!row) return
+
+  const btn = row.querySelector('.action-btn.play')
+  if (btn) { btn.textContent = '⏹'; btn.classList.add('playing') }
+  row.classList.add('playing')
+
+  s_playingFile = filename
+  s_playingRow = row
+
+  const url = `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
+  const audio = new Audio()
+  audio.crossOrigin = 'anonymous'
+  audio.src = url
+  s_player = audio
+  audio.volume = parseInt(document.getElementById('pVol')?.value || '80') / 100
+
+  audio.addEventListener('timeupdate', updatePlayerUI)
+  audio.addEventListener('loadedmetadata', updatePlayerUI)
+  audio.addEventListener('durationchange', updatePlayerUI)
+  audio.addEventListener('progress', () => {
+    const loaded = document.getElementById('pLoaded')
+    if (!loaded || !audio.buffered || !audio.buffered.length) return
+    const end = audio.buffered.end(audio.buffered.length - 1)
+    const dur = audio.duration
+    loaded.style.width = (isFinite(dur) && dur > 0 ? (end / dur) * 100 : 0) + '%'
+  })
+  audio.addEventListener('ended', () => {
+    log('Playback ended: ' + filename, 'ok')
+    playerStop()
+  })
+  audio.addEventListener('error', () => {
+    if (!s_player) return  // already cleaned up by ended/stop
+    log('Playback error: ' + filename, 'err')
+    setResp('respFileList', 'Play failed', false)
+    playerStop()
+  })
+
+  // Set up VU meter via Web Audio API
+  try {
+    const actx = new (window.AudioContext || window.webkitAudioContext)()
+    // Mobile browsers may start AudioContext suspended; resume right away
+    if (actx.state === 'suspended') actx.resume()
+    const source = actx.createMediaElementSource(audio)
+    const analyser = actx.createAnalyser()
+    analyser.fftSize = 128
+    source.connect(analyser)
+    analyser.connect(actx.destination)
+    s_audioCtx = actx
+    s_analyser = analyser
+  } catch (e) {
+    // VU meter unavailable — play without it; audio still plays through element
+  }
+
+  audio.play().catch(() => {
+    log('Play failed: ' + filename, 'err')
+    setResp('respFileList', 'Play failed', false)
+    playerStop()
+    return
+  })
   log('Playing: ' + filename, 'ok')
+  updatePlayerUI()
+  startVUMeter()
 }
+
+// ── Progress bar click-to-seek ──
+
+document.getElementById('pProgWrap')?.addEventListener('click', playerSeek)
+document.getElementById('pProgWrap')?.addEventListener('touchstart', (e) => {
+  // Only prevent default if it's a single touch on the progress bar, not scrolling
+  if (!e.target.closest('.p-row-prog')) return
+  playerSeek(e)
+  e.preventDefault()
+}, { passive: false })
 
 // ── Download with Progress ──
 

@@ -166,6 +166,37 @@
 
 </main>
 
+<!-- ─── Player Bar ─── -->
+<div class="player-bar" id="playerBar">
+  <div class="p-row p-row-fn">
+    <span class="p-filename" id="pFilename">No file selected</span>
+    <span class="p-time" id="pTime">00:00 / 00:00</span>
+  </div>
+  <div class="p-row p-row-vu">
+    <canvas class="p-vu" id="pVU"></canvas>
+  </div>
+  <div class="p-row p-row-prog" id="pProgWrap">
+    <div class="p-prog">
+      <div class="p-prog-loaded" id="pLoaded"></div>
+      <div class="p-prog-fill" id="pFill"></div>
+      <div class="p-prog-thumb" id="pThumb"></div>
+    </div>
+  </div>
+  <div class="p-row p-row-ctl">
+    <div class="p-transport">
+      <button class="p-btn" onclick="playerPrev()" title="Previous track">⏮</button>
+      <button class="p-btn p-btn-main" id="pBtnPlay" onclick="playerTogglePause()">▶</button>
+      <button class="p-btn" onclick="playerNext()" title="Next track">⏭</button>
+      <button class="p-btn p-btn-stop" onclick="playerStop()" title="Stop">⏹</button>
+    </div>
+    <div class="p-vol">
+      <span class="p-vol-icon">&#x1F50A;</span>
+      <input type="range" class="p-vol-slider" id="pVol" min="0" max="100" value="80"
+             oninput="playerSetVolume(this.value/100)" title="Volume">
+    </div>
+  </div>
+</div>
+
 <!-- ─── Collapsible Log ─── -->
 <div class="log-bar" id="logBar">
   <div class="log-bar-header" onclick="toggleLog()">
@@ -175,6 +206,7 @@
   </div>
   <div class="log-content" id="logBox"></div>
 </div>
+
 
 <script src="protocol.js"></script>
 <script src="file_ops.js"></script>
