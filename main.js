@@ -155,6 +155,8 @@ function setResp(id, msg, ok) {
 
 // ── OTA ──
 
+let s_otaFile = null
+
 function startOtaUpload() {
   if (!window.airmicWifiIp) { log('OTA requires WiFi connection', 'err'); return }
 
@@ -164,8 +166,22 @@ function startOtaUpload() {
 
   if (!file.name.endsWith('.bin')) { setResp('respOta', 'Only .bin files are supported', false); return }
 
-  if (!confirm('Confirm firmware upgrade? The device will reboot after flashing.')) return
+  s_otaFile = file
+  document.getElementById('otaConfirm').classList.add('open')
+}
 
+function cancelOta() {
+  document.getElementById('otaConfirm').classList.remove('open')
+  s_otaFile = null
+}
+
+function confirmOta() {
+  document.getElementById('otaConfirm').classList.remove('open')
+  const file = s_otaFile
+  s_otaFile = null
+  if (!file) return
+
+  const fileInput = document.getElementById('otaFile')
   const progress = document.getElementById('otaProgress')
   const fill = document.getElementById('otaProgressFill')
   const text = document.getElementById('otaProgressText')

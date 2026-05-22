@@ -212,6 +212,17 @@
 
 <div id="toast"></div>
 
+<div class="overlay" id="otaConfirm">
+  <div class="overlay-box">
+    <div class="overlay-title">Confirm Firmware Upgrade</div>
+    <div class="overlay-body">The device will reboot after flashing. Continue?</div>
+    <div class="overlay-actions">
+      <button class="btn btn-ghost btn-sm" onclick="cancelOta()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmOta()">Flash</button>
+    </div>
+  </div>
+</div>
+
 <script src="protocol.js"></script>
 <script src="file_ops.js"></script>
 <script src="main.js"></script>
