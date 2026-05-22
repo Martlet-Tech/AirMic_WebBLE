@@ -933,6 +933,28 @@ select option { background: var(--bg-primary); }
 
 /* ── Scrollbar ── */
 
+/* ── Toast ── */
+
+#toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 0.6rem;
+  font-family: var(--font-mono);
+  padding: 6px 18px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+  z-index: 100;
+}
+#toast.show { opacity: 1; }
+
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }

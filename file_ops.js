@@ -14,6 +14,19 @@ function escapeHtml(s) {
   d.textContent = s; return d.innerHTML
 }
 
+// ── Toast ──
+
+let s_toastTimer = null
+
+function showToast(msg) {
+  const el = document.getElementById('toast')
+  if (!el) return
+  el.textContent = msg
+  el.classList.add('show')
+  clearTimeout(s_toastTimer)
+  s_toastTimer = setTimeout(() => el.classList.remove('show'), 2500)
+}
+
 // ── Batch Delete State ──
 
 let s_batchDeleteQueue = null  // null = not in batch mode
@@ -588,6 +601,7 @@ function handleFileNotify(cmd, ok, d) {
           // Batch complete
           s_batchDeleteQueue = null
           setResp('respFileList', 'Delete done', true)
+          showToast('Files deleted')
           setTimeout(cmdGetFileList, 500)
         } else {
           setResp('respFileList', 'Deleted, ' + s_batchDeletePending + ' remaining', true)
@@ -595,6 +609,7 @@ function handleFileNotify(cmd, ok, d) {
         }
       } else {
         setResp('respFileList', 'File deleted', true)
+        showToast('File deleted')
         setTimeout(cmdGetFileList, 500)
       }
     } else {

@@ -164,6 +164,8 @@ function startOtaUpload() {
 
   if (!file.name.endsWith('.bin')) { setResp('respOta', 'Only .bin files are supported', false); return }
 
+  if (!confirm('Confirm firmware upgrade? The device will reboot after flashing.')) return
+
   const progress = document.getElementById('otaProgress')
   const fill = document.getElementById('otaProgressFill')
   const text = document.getElementById('otaProgressText')
