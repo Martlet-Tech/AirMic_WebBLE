@@ -195,6 +195,21 @@ function clearPlayerState() {
   s_playingFile = null
 }
 
+function suspendVUMeter() {
+  if (s_animFrame) { cancelAnimationFrame(s_animFrame); s_animFrame = null }
+  if (s_audioCtx && s_audioCtx.state === 'suspended') return
+  if (s_audioCtx && s_audioCtx.state !== 'closed') {
+    s_audioCtx.suspend()
+  }
+}
+
+function resumeVUMeter() {
+  if (s_audioCtx && s_audioCtx.state === 'suspended') {
+    s_audioCtx.resume()
+  }
+  startVUMeter()
+}
+
 function stopVUMeter() {
   if (s_animFrame) { cancelAnimationFrame(s_animFrame); s_animFrame = null }
   if (s_audioCtx) {
@@ -342,11 +357,10 @@ function playerTogglePause() {
   if (!s_player || !s_playingFile) return
   if (s_player.paused) {
     s_player.play().catch(() => playerStop())
-    startVUMeter()
+    resumeVUMeter()
   } else {
     s_player.pause()
-    stopVUMeter()
-    drawVUMeterIdle()
+    suspendVUMeter()
   }
   updatePlayerUI()
 }
@@ -390,8 +404,8 @@ function playerNext() {
 function playFile(filename) {
   if (!window.airmicWifiIp) { setResp('respFileList', 'WiFi not connected', false); return }
 
-  // Same file → toggle pause
-  if (s_playingFile === filename) { playerTogglePause(); return }
+  // Same file → stop (row button shows ⏹ = stop, not pause toggle)
+  if (s_playingFile === filename) { playerStop(); return }
 
   // Different file → stop current, start new
   playerStop()
@@ -428,7 +442,8 @@ function playFile(filename) {
     playerStop()
   })
   audio.addEventListener('error', () => {
-    if (!s_player) return  // already cleaned up by ended/stop
+    // Guard: this audio element was already replaced by a new playFile() call
+    if (s_player !== audio) return
     log('Playback error: ' + filename, 'err')
     setResp('respFileList', 'Play failed', false)
     playerStop()
