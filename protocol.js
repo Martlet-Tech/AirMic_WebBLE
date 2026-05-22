@@ -12,8 +12,8 @@ async function send(buf) {
     const hex = Array.from(new Uint8Array(buf))
       .map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')
     await ctrlChar.writeValueWithoutResponse(buf)
-    log('TX → ' + hex, 'tx')
-  } catch (e) { log('send err: ' + e.message, 'err') }
+    log(I18N.t('log.tx') + ' ' + hex, 'tx')
+  } catch (e) { log(I18N.t('log.sendErr') + ': ' + e.message, 'err') }
 }
 
 // ── Commands ──
@@ -47,8 +47,8 @@ async function cmdGetStatus() {
 async function cmdGetFileList() {
   const container = document.getElementById('fileList')
   const empty = document.getElementById('fileEmpty')
-  if (empty) { empty.textContent = 'Loading...' }
-  else { container.innerHTML = '<div class="empty-state">Loading...</div>' }
+  if (empty) { empty.textContent = I18N.t('files.loading') }
+  else { container.innerHTML = '<div class="empty-state">' + I18N.t('files.loading') + '</div>' }
   await send(new Uint8Array([0x06, 0x00]).buffer)
 }
 
@@ -136,15 +136,15 @@ function loadWifiSettings() {
 async function cmdWifiSetup() {
   const ssid = document.getElementById('wifiSsid').value
   const password = document.getElementById('wifiPassword').value
-  if (!ssid) { setResp('respWifiEdit', 'SSID is required', false); return }
+  if (!ssid) { setResp('respWifiEdit', I18N.t('wifi.ssidRequired'), false); return }
 
   saveWifiSettings(ssid, password)
   window.airmicWifiSsid = ssid
 
   const icon = document.querySelector('.wifi-icon')
   if (icon) icon.setAttribute('class', 'wifi-icon connecting')
-  document.getElementById('topIp').textContent = 'Connecting...'
-  setResp('respWifiEdit', 'Connecting...', false)
+  document.getElementById('topIp').textContent = I18N.t('wifi.connecting')
+  setResp('respWifiEdit', I18N.t('wifi.connecting'), false)
 
   const ssidBytes = new TextEncoder().encode(ssid)
   const pwBytes = new TextEncoder().encode(password)
@@ -179,7 +179,7 @@ function startWifiPoll() {
     cmdGetWifiStatus().catch(() => {})
     if (wifiPollAttempts >= MAX_WIFI_POLL) {
       stopWifiPoll()
-      setResp('respWifiEdit', 'Connection timeout', false)
+      setResp('respWifiEdit', I18N.t('wifi.timeout'), false)
       document.querySelector('.wifi-icon')?.classList.remove('connecting')
     }
   }, WIFI_POLL_MS)
@@ -199,23 +199,23 @@ function setWifiConnected(ip) {
 function onNotify(e) {
   const d = new Uint8Array(e.target.value.buffer)
   const hex = Array.from(d).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ')
-  log('RX ← ' + hex, 'rx')
+  log(I18N.t('log.rx') + ' ' + hex, 'rx')
 
   const cmd = d[0], ok = d[1] === 0
 
-  if (cmd === 0x01)  setResp('respSync', ok ? 'Time synced' : 'ERROR', ok)
-  if (cmd === 0x02)  setResp('respSync', ok ? 'Rate set' : 'ERROR', ok)
-  if (cmd === 0x03)  setResp('respSync', ok ? 'Channels set' : 'ERROR', ok)
+  if (cmd === 0x01)  setResp('respSync', ok ? I18N.t('time.synced') : I18N.t('time.error'), ok)
+  if (cmd === 0x02)  setResp('respSync', ok ? I18N.t('enc.set') : I18N.t('time.error'), ok)
+  if (cmd === 0x03)  setResp('respSync', ok ? I18N.t('enc.chSet') : I18N.t('time.error'), ok)
 
   if (cmd === 0x04 && ok) {
     const ts = d[3] | (d[4] << 8) | (d[5] << 16) | (d[6] << 24)
     const encNames = ['WAV','AAC','ALAC']
     const enc = d[7] || 1
-    setResp('respStat', 'REC=' + d[2] + '  ENC=' + (encNames[enc] || '?') + '  TIME=' + new Date(ts * 1000).toISOString(), true)
+    setResp('respStat', I18N.t('stat.rec') + '=' + d[2] + '  ' + I18N.t('stat.enc') + '=' + (encNames[enc] || '?') + '  ' + I18N.t('stat.time') + '=' + new Date(ts * 1000).toISOString(), true)
   }
 
   if (cmd === 0x05) {
-    setResp('respWifiEdit', ok ? 'Connecting...' : 'ERROR', ok)
+    setResp('respWifiEdit', ok ? I18N.t('wifi.connecting') : I18N.t('time.error'), ok)
     if (ok) startWifiPoll()
   }
 
@@ -253,7 +253,7 @@ function onNotify(e) {
 
   // ── Config Set (0x0C) ──
   if (cmd === 0x0C) {
-    setResp('respSync', ok ? 'Config saved' : 'Config ERROR', ok)
+    setResp('respSync', ok ? I18N.t('wifi.configSaved') : I18N.t('wifi.configError'), ok)
     if (ok) setTimeout(cmdConfigList, 500)  // refresh
   }
 
@@ -270,20 +270,20 @@ function onNotify(e) {
           try { const s = JSON.parse(localStorage.getItem('airmic_wifi_settings')); if (s?.ssid) window.airmicWifiSsid = s.ssid } catch(_) {}
         }
         setWifiConnected(ip)
-        setResp('respWifiEdit', 'Connected (' + ip + ')', true)
+        setResp('respWifiEdit', I18N.t('wifi.connected') + ' (' + ip + ')', true)
         stopWifiPoll()
         // Switch to Files tab on success
         document.querySelector('[data-tab="files"]')?.click()
         if (ip) setTimeout(cmdGetFileList, 800)
       } else if (status === 1) {
-        setResp('respWifiEdit', 'Obtaining IP...', false)
+        setResp('respWifiEdit', I18N.t('wifi.obtainingIp'), false)
       } else {
         setWifiConnected(null)
-        setResp('respWifiEdit', 'Not connected. Check SSID/password.', false)
+        setResp('respWifiEdit', I18N.t('wifi.notConnected'), false)
       }
     } else {
       setWifiConnected(null)
-      setResp('respWifiEdit', 'Failed to get WiFi status', false)
+      setResp('respWifiEdit', I18N.t('wifi.failedStatus'), false)
       stopWifiPoll()
     }
   }

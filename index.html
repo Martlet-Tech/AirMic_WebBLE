@@ -13,15 +13,15 @@
 <!-- ─── Fixed Top Bar ─── -->
 <header class="top-bar">
   <div class="top-left">
-    <div class="brand">AirMic</div>
-    <div class="subtitle">FPV AUDIO MODULE</div>
+    <div class="brand" data-i18n="app.brand">AirMic</div>
+    <div class="subtitle" data-i18n="app.subtitle">FPV AUDIO MODULE</div>
   </div>
   <div class="top-right">
     <div class="top-conn" id="topConn" onclick="toggleConnect()">
       <svg class="top-bt-icon" id="topBtIcon" viewBox="0 0 494.296 494.296" width="16" height="16">
         <path d="M456.098,140.898L212.156,0v212.5L58.203,123.579l-20.006,34.638l153.97,88.931l-153.97,88.931l20.006,34.638l153.952-88.921v212.5l243.943-140.898l-183.955-106.25L456.098,140.898z M252.156,69.296l123.967,71.602L252.156,212.5V69.296z M376.123,353.398L252.156,425V281.796L376.123,353.398z"/>
       </svg>
-      <span class="top-status" id="topStatus">NOT CONNECTED</span>
+      <span class="top-status" id="topStatus" data-i18n="conn.notConnected">NOT CONNECTED</span>
       <span class="top-device" id="topDevice"></span>
     </div>
     <div class="top-wifi" id="topWifi">
@@ -33,14 +33,14 @@
       </svg>
       <span class="top-ip" id="topIp">--</span>
     </div>
-    <div class="top-log-btn" id="topLogBtn" onclick="toggleLog()" title="Log">&#x29;&#x29;</div>
+    <div class="top-log-btn" id="topLogBtn" onclick="toggleLog()" title="Log" data-i18n-title="log.title">&#x29;&#x29;</div>
   </div>
 </header>
 
 <!-- ─── Collapsible Log ─── -->
 <div class="log-bar" id="logBar">
   <div class="log-bar-header" onclick="toggleLog()">
-    <span>Log</span>
+    <span data-i18n="log.title">Log</span>
     <span class="log-badge" id="logBadge">0</span>
     <span class="log-toggle" id="logToggle">&#x25B4;</span>
   </div>
@@ -49,10 +49,10 @@
 
 <!-- ─── Tab Bar ─── -->
 <nav class="tab-bar" id="tabBar">
-  <button class="tab active" data-tab="files">Files</button>
-  <button class="tab" data-tab="settings">Settings</button>
-  <button class="tab" data-tab="ota">OTA</button>
-  <button class="tab" data-tab="about">About</button>
+  <button class="tab active" data-tab="files" data-i18n="tab.files">Files</button>
+  <button class="tab" data-tab="settings" data-i18n="tab.settings">Settings</button>
+  <button class="tab" data-tab="ota" data-i18n="tab.ota">OTA</button>
+  <button class="tab" data-tab="about" data-i18n="tab.about">About</button>
 </nav>
 
 <!-- ─── Tab Content ─── -->
@@ -61,17 +61,17 @@
   <!-- === Files Tab === -->
   <div class="tab-pane active" id="tab-files">
     <div class="file-toolbar">
-      <button class="btn btn-ghost btn-sm" id="btnFileList" onclick="cmdGetFileList()">Refresh</button>
-      <button class="btn btn-sm btn-batch" onclick="deleteSelectedFiles(this)">Delete Selected</button>
-      <button class="btn btn-sm btn-batch btn-batch-danger" onclick="deleteAllFiles(this)">Delete All</button>
+      <button class="btn btn-ghost btn-sm" id="btnFileList" onclick="cmdGetFileList()" data-i18n="files.refresh">Refresh</button>
+      <button class="btn btn-sm btn-batch" onclick="deleteSelectedFiles(this)" data-i18n="files.deleteSelected">Delete Selected</button>
+      <button class="btn btn-sm btn-batch btn-batch-danger" onclick="deleteAllFiles(this)" data-i18n="files.deleteAll">Delete All</button>
       <div class="toolbar-spacer"></div>
-      <button class="btn btn-sm btn-sort" id="btnSortName" onclick="setSort('name')">Name &#x25B4;</button>
-      <button class="btn btn-sm btn-sort" id="btnSortSize" onclick="setSort('size')">Size</button>
+      <button class="btn btn-sm btn-sort" id="btnSortName" onclick="setSort('name')" data-i18n="files.sortName">Name &#x25B4;</button>
+      <button class="btn btn-sm btn-sort" id="btnSortSize" onclick="setSort('size')" data-i18n="files.sortSize">Size</button>
     </div>
     <div class="file-list" id="fileList">
-      <div class="empty-state" id="fileEmpty">
+      <div class="empty-state" id="fileEmpty" data-i18n="files.empty">
         Connect BLE and WiFi to browse files
-        <div class="hint">File list loads automatically when connected</div>
+        <div class="hint" data-i18n="files.emptyHint">File list loads automatically when connected</div>
       </div>
     </div>
 	  </div>
@@ -80,66 +80,72 @@
   <div class="tab-pane" id="tab-settings">
 
     <div class="setting-group">
-      <div class="setting-title">WiFi Setup</div>
+      <div class="setting-title" data-i18n="settings.wifiSetup">WiFi Setup</div>
       <div class="field-group">
-        <input type="text" id="wifiSsid" placeholder="SSID">
+        <input type="text" id="wifiSsid" placeholder="SSID" data-i18n-placeholder="settings.ssid">
       </div>
       <div class="field-group">
         <div class="input-wrap">
-          <input type="password" id="wifiPassword" placeholder="Password">
+          <input type="password" id="wifiPassword" placeholder="Password" data-i18n-placeholder="settings.password">
           <button type="button" class="toggle-vis" onclick="togglePassword()">&#x1f441;</button>
         </div>
       </div>
       <div style="display:flex;gap:6px">
-        <button class="btn btn-primary btn-sm" id="btnWifi" onclick="cmdWifiSetup()" disabled>Connect WiFi</button>
+        <button class="btn btn-primary btn-sm" id="btnWifi" onclick="cmdWifiSetup()" disabled data-i18n="settings.connectWifi">Connect WiFi</button>
       </div>
       <div class="resp-msg" id="respWifiEdit">&mdash;</div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-title">Time Sync</div>
+      <div class="setting-title" data-i18n="settings.timeSync">Time Sync</div>
       <div class="clock-display" id="clock">--:--:--</div>
       <div class="clock-date" id="cdate">---- -- --</div>
-      <button class="btn btn-secondary btn-sm" id="btnSync" onclick="cmdTimeSync()" disabled>Sync Time</button>
+      <button class="btn btn-secondary btn-sm" id="btnSync" onclick="cmdTimeSync()" disabled data-i18n="settings.syncTime">Sync Time</button>
       <div class="resp-msg" id="respSync">&mdash;</div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-title">Audio Config</div>
+      <div class="setting-title" data-i18n="settings.audioConfig">Audio Config</div>
       <div class="field-row">
         <div class="field-group">
-          <label class="field-label">Encoder</label>
+          <label class="field-label" data-i18n="settings.encoder">Encoder</label>
           <select id="selEncoder">
-            <option value="0">WAV</option>
-            <option value="1" selected>AAC</option>
-            <option value="2">ALAC</option>
+            <option value="0" data-i18n="enc.wav">WAV</option>
+            <option value="1" selected data-i18n="enc.aac">AAC</option>
+            <option value="2" data-i18n="enc.alac">ALAC</option>
           </select>
-          <button class="btn btn-secondary btn-sm" onclick="cmdSetEncoder()" id="btnEnc" disabled style="margin-top:6px">Apply</button>
+          <button class="btn btn-secondary btn-sm" onclick="cmdSetEncoder()" id="btnEnc" disabled style="margin-top:6px" data-i18n="settings.apply">Apply</button>
         </div>
         <div class="field-group">
-          <label class="field-label">Channels</label>
+          <label class="field-label" data-i18n="settings.channels">Channels</label>
           <select id="selCh">
-            <option value="1">Mono</option>
-            <option value="2" selected>Stereo</option>
+            <option value="1" data-i18n="settings.mono">Mono</option>
+            <option value="2" selected data-i18n="settings.stereo">Stereo</option>
           </select>
-          <button class="btn btn-secondary btn-sm" onclick="cmdChannels()" id="btnCh" disabled style="margin-top:6px">Apply</button>
+          <button class="btn btn-secondary btn-sm" onclick="cmdChannels()" id="btnCh" disabled style="margin-top:6px" data-i18n="settings.apply">Apply</button>
         </div>
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="setting-title">Device Status</div>
-      <button class="btn btn-secondary btn-sm" id="btnStat" onclick="cmdGetStatus()" disabled>Query Status</button>
+      <div class="setting-title" data-i18n="settings.deviceStatus">Device Status</div>
+      <button class="btn btn-secondary btn-sm" id="btnStat" onclick="cmdGetStatus()" disabled data-i18n="settings.queryStatus">Query Status</button>
       <div class="resp-msg" id="respStat">&mdash;</div>
     </div>
 
-  </div>
+    <div class="setting-group">
+      <div class="setting-title" data-i18n="settings.language">Language / 语言</div>
+      <select id="selLang" onchange="I18N.setLang(this.value)" style="width:auto">
+        <option value="en">English</option>
+        <option value="zh">中文</option>
+      </select>
+    </div>
 
-  <!-- === OTA Tab === -->
+  </div>
   <div class="tab-pane" id="tab-ota">
     <div class="setting-group">
-      <div class="setting-title">Firmware Upgrade</div>
-      <div class="ota-desc">Select a .bin firmware file to upload and flash via WiFi. The device will reboot after completion.</div>
+      <div class="setting-title" data-i18n="ota.firmwareUpgrade">Firmware Upgrade</div>
+      <div class="ota-desc" data-i18n="ota.desc">Select a .bin firmware file to upload and flash via WiFi. The device will reboot after completion.</div>
 
       <div class="field-group">
         <input type="file" id="otaFile" accept=".bin" class="file-input">
@@ -152,7 +158,7 @@
         <span class="ota-progress-text" id="otaProgressText">0%</span>
       </div>
 
-      <button class="btn btn-primary btn-sm" id="btnOta" onclick="startOtaUpload()" disabled>Upload &amp; Flash</button>
+      <button class="btn btn-primary btn-sm" id="btnOta" onclick="startOtaUpload()" disabled data-i18n="ota.uploadFlash">Upload &amp; Flash</button>
       <div class="resp-msg" id="respOta">&mdash;</div>
     </div>
   </div>
@@ -160,19 +166,19 @@
   <!-- === About Tab === -->
   <div class="tab-pane" id="tab-about">
     <div class="setting-group">
-      <div class="setting-title">AirMic</div>
+      <div class="setting-title" data-i18n="about.title">AirMic</div>
       <div class="about-info">
-        <div class="about-row"><span class="about-label">Device</span><span id="aboutDevice">--</span></div>
-        <div class="about-row"><span class="about-label">BLE Status</span><span id="aboutBle">--</span></div>
-        <div class="about-row"><span class="about-label">WiFi IP</span><span id="aboutIp">--</span></div>
-        <div class="about-row"><span class="about-label">Version</span><span id="aboutVer">rev0.2</span></div>
+        <div class="about-row"><span class="about-label" data-i18n="about.device">Device</span><span id="aboutDevice">--</span></div>
+        <div class="about-row"><span class="about-label" data-i18n="about.bleStatus">BLE Status</span><span id="aboutBle">--</span></div>
+        <div class="about-row"><span class="about-label" data-i18n="about.wifiIp">WiFi IP</span><span id="aboutIp">--</span></div>
+        <div class="about-row"><span class="about-label" data-i18n="about.version">Version</span><span id="aboutVer">rev0.2</span></div>
       </div>
     </div>
     <div class="setting-group">
-      <div class="setting-title">Help</div>
+      <div class="setting-title" data-i18n="about.help">Help</div>
       <div class="help-text">
-        <p>Connect via BLE to configure your AirMic module. Use the Files tab to browse, play, download, rename, or delete recordings from the SD card.</p>
-        <p>WiFi is required for file transfers and OTA updates.</p>
+        <p data-i18n="about.helpText1">Connect via BLE to configure your AirMic module. Use the Files tab to browse, play, download, rename, or delete recordings from the SD card.</p>
+        <p data-i18n="about.helpText2">WiFi is required for file transfers and OTA updates.</p>
       </div>
     </div>
   </div>
@@ -182,7 +188,7 @@
 <!-- ─── Player Bar ─── -->
 <div class="player-bar" id="playerBar">
   <div class="p-row p-row-fn">
-    <span class="p-filename" id="pFilename">No file selected</span>
+    <span class="p-filename" id="pFilename" data-i18n="player.noFile">No file selected</span>
     <span class="p-time" id="pTime">00:00 / 00:00</span>
   </div>
   <div class="p-row p-row-vu">
@@ -197,15 +203,15 @@
   </div>
   <div class="p-row p-row-ctl">
     <div class="p-transport">
-      <button class="p-btn" onclick="playerPrev()" title="Previous track">⏮</button>
+      <button class="p-btn" onclick="playerPrev()" title="Previous track" data-i18n-title="player.prevTrack">⏮</button>
       <button class="p-btn p-btn-main" id="pBtnPlay" onclick="playerTogglePause()">▶</button>
-      <button class="p-btn" onclick="playerNext()" title="Next track">⏭</button>
-      <button class="p-btn p-btn-stop" onclick="playerStop()" title="Stop">⏹</button>
+      <button class="p-btn" onclick="playerNext()" title="Next track" data-i18n-title="player.nextTrack">⏭</button>
+      <button class="p-btn p-btn-stop" onclick="playerStop()" title="Stop" data-i18n-title="player.stop">⏹</button>
     </div>
     <div class="p-vol">
       <span class="p-vol-icon">&#x1F50A;</span>
       <input type="range" class="p-vol-slider" id="pVol" min="0" max="100" value="80"
-             oninput="playerSetVolume(this.value/100)" title="Volume">
+             oninput="playerSetVolume(this.value/100)" title="Volume" data-i18n-title="player.volume">
     </div>
   </div>
 </div>
@@ -216,17 +222,19 @@
 
 <div class="overlay" id="otaConfirm">
   <div class="overlay-box">
-    <div class="overlay-title">Confirm Firmware Upgrade</div>
-    <div class="overlay-body">The device will reboot after flashing. Continue?</div>
+    <div class="overlay-title" data-i18n="ota.confirmTitle">Confirm Firmware Upgrade</div>
+    <div class="overlay-body" data-i18n="ota.confirmBody">The device will reboot after flashing. Continue?</div>
     <div class="overlay-actions">
-      <button class="btn btn-ghost btn-sm" onclick="cancelOta()">Cancel</button>
-      <button class="btn btn-primary btn-sm" onclick="confirmOta()">Flash</button>
+      <button class="btn btn-ghost btn-sm" onclick="cancelOta()" data-i18n="ota.cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmOta()" data-i18n="ota.flash">Flash</button>
     </div>
   </div>
 </div>
 
+<script src="i18n.js"></script>
 <script src="protocol.js"></script>
 <script src="file_ops.js"></script>
 <script src="main.js"></script>
+<script>document.getElementById('selLang').value = I18N.lang</script>
 </body>
 </html>

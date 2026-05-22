@@ -55,7 +55,7 @@ async function toggleConnect() {
   if (device?.gatt?.connected) { device.gatt.disconnect(); return }
 
   try {
-    log('Scanning for AirMic...', 'tx')
+    log(I18N.t('conn.scanning'), 'tx')
     topBarConnecting(true)
     device = await navigator.bluetooth.requestDevice({
       filters: [{ name: 'Martlet AirMic' }],
@@ -64,17 +64,17 @@ async function toggleConnect() {
     device.addEventListener('gattserverdisconnected', onDisc)
 
     const server = await device.gatt.connect()
-    log('Connected: ' + device.name, 'ok')
+    log(I18N.t('conn.connectedTo') + ' ' + device.name, 'ok')
 
     const svc = await server.getPrimaryService(SVC_AIRMIC)
     ctrlChar = await svc.getCharacteristic(CHAR_CTRL)
     const resp = await svc.getCharacteristic(CHAR_RESP)
     await resp.startNotifications()
     resp.addEventListener('characteristicvaluechanged', onNotify)
-    log('Notifications ready', 'ok')
+    log(I18N.t('conn.notifications'), 'ok')
     setUI(true)
   } catch (e) {
-    log('Error: ' + e.message, 'err')
+    log(I18N.t('conn.error') + ' ' + e.message, 'err')
     setUI(false)
   } finally {
     topBarConnecting(false)
@@ -93,7 +93,7 @@ function topBarConnecting(connecting) {
 }
 
 function onDisc() {
-  log('Disconnected', 'err')
+  log(I18N.t('conn.disconnected'), 'err')
   setUI(false)
 }
 
@@ -106,7 +106,7 @@ function setUI(on) {
 
   if (icon) icon.classList.toggle('connected', on)
   st.className = 'top-status' + (on ? ' connected' : '')
-  st.textContent = on ? 'CONNECTED' : 'NOT CONNECTED'
+  st.textContent = on ? I18N.t('conn.connected') : I18N.t('conn.notConnected')
   deviceEl.textContent = on && device?.name ? device.name : ''
 
   // Enable/disable BLE-dependent buttons
@@ -119,12 +119,12 @@ function setUI(on) {
     document.getElementById('respFileList').innerHTML = '&mdash;'
     document.getElementById('respFileList').className = 'resp-msg'
     document.getElementById('fileList').innerHTML =
-      '<div class="empty-state">Connect BLE and WiFi to browse files' +
-      '<div class="hint">File list loads automatically when connected</div></div>'
+      '<div class="empty-state">' + I18N.t('files.empty') +
+      '<div class="hint">' + I18N.t('files.emptyHint') + '</div></div>'
   }
 
   // About tab
-  document.getElementById('aboutBle').textContent = on ? 'Connected' : 'Disconnected'
+  document.getElementById('aboutBle').textContent = on ? I18N.t('conn.connected') : I18N.t('conn.notConnectedShort')
 
   if (on) {
     setTimeout(cmdGetWifiStatus, 1000)
@@ -158,13 +158,13 @@ function setResp(id, msg, ok) {
 let s_otaFile = null
 
 function startOtaUpload() {
-  if (!window.airmicWifiIp) { log('OTA requires WiFi connection', 'err'); return }
+  if (!window.airmicWifiIp) { log(I18N.t('misc.otaReq'), 'err'); return }
 
   const fileInput = document.getElementById('otaFile')
   const file = fileInput.files[0]
-  if (!file) { setResp('respOta', 'Select a .bin file first', false); return }
+  if (!file) { setResp('respOta', I18N.t('ota.selectBin'), false); return }
 
-  if (!file.name.endsWith('.bin')) { setResp('respOta', 'Only .bin files are supported', false); return }
+  if (!file.name.endsWith('.bin')) { setResp('respOta', I18N.t('ota.onlyBin'), false); return }
 
   s_otaFile = file
   document.getElementById('otaConfirm').classList.add('open')
@@ -192,7 +192,7 @@ function confirmOta() {
   fill.className = 'ota-progress-fill'
   text.textContent = '0%'
   btn.disabled = true
-  setResp('respOta', 'Uploading...', false)
+  setResp('respOta', I18N.t('ota.uploading'), false)
 
   const xhr = new XMLHttpRequest()
   xhr.open('POST', `http://${window.airmicWifiIp}/ota`)
@@ -211,7 +211,7 @@ function confirmOta() {
     fill.style.width = '100%'
     text.textContent = '100%'
     btn.disabled = false
-    const msg = xhr.responseText || (xhr.status === 200 ? 'Flash complete, rebooting...' : 'HTTP ' + xhr.status)
+    const msg = xhr.responseText || (xhr.status === 200 ? I18N.t('ota.flashComplete') : I18N.t('misc.http') + ' ' + xhr.status)
     setResp('respOta', msg, xhr.status === 200)
     log('OTA: ' + msg, xhr.status === 200 ? 'ok' : 'err')
     fileInput.value = ''
@@ -221,18 +221,18 @@ function confirmOta() {
   xhr.onerror = () => {
     fill.classList.add('error')
     btn.disabled = false
-    setResp('respOta', 'Upload failed - check CORS or network', false)
-    log('OTA: network error (CORS or connection)', 'err')
+    setResp('respOta', I18N.t('ota.uploadFailed'), false)
+    log('OTA: ' + I18N.t('ota.uploadFailed'), 'err')
     setTimeout(() => { progress.style.display = 'none' }, 3000)
   }
 
   xhr.ontimeout = () => {
     fill.classList.add('error')
     btn.disabled = false
-    setResp('respOta', 'Upload timed out', false)
-    log('OTA: upload timed out', 'err')
+    setResp('respOta', I18N.t('ota.uploadTimeout'), false)
+    log('OTA: ' + I18N.t('ota.uploadTimeout'), 'err')
   }
 
   xhr.send(file)
-  log('OTA upload started: ' + file.name, 'tx')
+  log(I18N.t('ota.uploadStarted') + ' ' + file.name, 'tx')
 }

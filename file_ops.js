@@ -50,17 +50,17 @@ function setSort(mode) {
 // ── Fetch file list via HTTP ──
 
 async function fetchFileList() {
-  if (!window.airmicWifiIp) { setResp('respFileList', 'WiFi not connected', false); return }
+  if (!window.airmicWifiIp) { setResp('respFileList', I18N.t('files.noWifi'), false); return }
   // Sync sort button UI
   const btnN = document.getElementById('btnSortName')
   const btnS = document.getElementById('btnSortSize')
   if (btnN) {
     btnN.className = 'btn btn-sm btn-sort' + (s_sortBy === 'name' ? ' active' : '')
-    btnN.innerHTML = 'Name ' + (s_sortBy === 'name' ? (s_sortAsc ? '▴' : '▾') : '')
+    btnN.innerHTML = I18N.t('files.sortName') + ' ' + (s_sortBy === 'name' ? (s_sortAsc ? '▴' : '▾') : '')
   }
   if (btnS) {
     btnS.className = 'btn btn-sm btn-sort' + (s_sortBy === 'size' ? ' active' : '')
-    btnS.innerHTML = 'Size ' + (s_sortBy === 'size' ? (s_sortAsc ? '▴' : '▾') : '')
+    btnS.innerHTML = I18N.t('files.sortSize') + ' ' + (s_sortBy === 'size' ? (s_sortAsc ? '▴' : '▾') : '')
   }
   try {
     const resp = await fetch(`http://${window.airmicWifiIp}/files`)
@@ -84,10 +84,10 @@ async function fetchFileList() {
             <span class="file-size">${formatFileSize(file.size)}</span>
           </div>
           <div class="file-actions">
-            <button class="action-btn play" title="Play">▶</button>
-            <button class="action-btn download" title="Download">↓</button>
-            <button class="action-btn rename" title="Rename">✎</button>
-            <button class="action-btn delete" title="Delete">✕</button>
+            <button class="action-btn play" title="${I18N.t('files.play')}">▶</button>
+            <button class="action-btn download" title="${I18N.t('files.download')}">↓</button>
+            <button class="action-btn rename" title="${I18N.t('files.rename')}">✎</button>
+            <button class="action-btn delete" title="${I18N.t('files.delete')}">✕</button>
           </div>
           <div class="progress-bar"><div class="progress-fill"></div></div>`
         row.querySelector('.play').onclick = () => playFile(file.name)
@@ -111,13 +111,13 @@ async function fetchFileList() {
       }
       // fileCount removed
     } else {
-      container.innerHTML = '<div class="empty-state">No files found</div>'
+      container.innerHTML = '<div class="empty-state">' + I18N.t('files.noFiles') + '</div>'
       // fileCount removed
     }
-    log('Fetched ' + (data.count || data.files?.length || 0) + ' files via HTTP', 'ok')
+    log(I18N.t('log.fetched') + ' ' + (data.count || data.files?.length || 0) + ' ' + I18N.t('log.viaHttp'), 'ok')
   } catch (e) {
-    setResp('respFileList', 'ERROR: ' + e.message, false)
-    log('Fetch error: ' + e.message, 'err')
+    setResp('respFileList', I18N.t('misc.error') + ' ' + e.message, false)
+    log(I18N.t('misc.fetchErr') + ' ' + e.message, 'err')
   }
 }
 
@@ -156,12 +156,12 @@ function startDelete(filename, btnEl) {
   if (btnEl.dataset.confirming === 'true') {
     btnEl.dataset.confirming = ''; btnEl.classList.remove('confirming')
     btnEl.textContent = '✕'
-    log('Deleting: ' + filename, 'tx')
+    log(I18N.t('notify.deleting') + ' ' + filename, 'tx')
     cmdDeleteFile(filename)
     return
   }
   btnEl.dataset.confirming = 'true'; btnEl.classList.add('confirming')
-  btnEl.textContent = 'OK?'
+  btnEl.textContent = I18N.t('notify.ok')
   setTimeout(() => {
     btnEl.dataset.confirming = ''; btnEl.classList.remove('confirming')
     btnEl.textContent = '✕'
@@ -173,42 +173,42 @@ function startDelete(filename, btnEl) {
 function deleteSelectedFiles(btnEl) {
   if (btnEl.dataset.confirming === 'true') {
     btnEl.dataset.confirming = ''; btnEl.classList.remove('confirming')
-    btnEl.textContent = 'Delete Selected'
+    btnEl.textContent = I18N.t('files.deleteSelected')
     const checked = document.querySelectorAll('.file-check:checked')
-    if (checked.length === 0) { log('No files selected', ''); return }
+    if (checked.length === 0) { log(I18N.t('notify.noSel'), ''); return }
     s_batchDeleteQueue = Array.from(checked).map(cb => cb.dataset.filename)
     s_batchDeletePending = s_batchDeleteQueue.length
-    log('Batch delete: ' + s_batchDeleteQueue.join(', '), 'tx')
+    log(I18N.t('notify.batchDel') + ' ' + s_batchDeleteQueue.join(', '), 'tx')
     cmdDeleteFile(s_batchDeleteQueue.shift())
     return
   }
   btnEl.dataset.confirming = 'true'; btnEl.classList.add('confirming')
-  btnEl.textContent = 'OK?'
+  btnEl.textContent = I18N.t('notify.ok')
   setTimeout(() => {
     btnEl.dataset.confirming = ''; btnEl.classList.remove('confirming')
-    btnEl.textContent = 'Delete Selected'
+    btnEl.textContent = I18N.t('files.deleteSelected')
   }, 3000)
 }
 
 function deleteAllFiles(btnEl) {
   const rows = document.querySelectorAll('#fileList .file-row')
-  if (rows.length === 0) { log('No files to delete', ''); return }
+  if (rows.length === 0) { log(I18N.t('notify.noDel'), ''); return }
   if (btnEl.dataset.confirming === 'true') {
     btnEl.dataset.confirming = ''; btnEl.classList.remove('confirming')
-    btnEl.textContent = 'Delete All'
+    btnEl.textContent = I18N.t('files.deleteAll')
     // Check all checkboxes first so UI reflects the operation
     rows.forEach(row => { const cb = row.querySelector('.file-check'); if (cb) cb.checked = true })
     s_batchDeleteQueue = Array.from(rows).map(row => row.dataset.filename)
     s_batchDeletePending = s_batchDeleteQueue.length
-    log('Delete all: ' + s_batchDeleteQueue.length + ' files', 'tx')
+    log(I18N.t('notify.delAll') + ' ' + s_batchDeleteQueue.length + ' ' + I18N.t('notify.files'), 'tx')
     cmdDeleteFile(s_batchDeleteQueue.shift())
     return
   }
   btnEl.dataset.confirming = 'true'; btnEl.classList.add('confirming')
-  btnEl.textContent = 'OK?'
+  btnEl.textContent = I18N.t('notify.ok')
   setTimeout(() => {
     btnEl.dataset.confirming = ''; btnEl.classList.remove('confirming')
-    btnEl.textContent = 'Delete All'
+    btnEl.textContent = I18N.t('files.deleteAll')
   }, 3000)
 }
 
@@ -362,7 +362,7 @@ function updatePlayerUI() {
   thumb.style.left = idle ? '-999px' : thumb.style.left
 
   if (idle) {
-    document.getElementById('pFilename').textContent = 'No file selected'
+    document.getElementById('pFilename').textContent = I18N.t('player.noFile')
     timeEl.textContent = '--:-- / --:--'
     fill.style.width = '0%'
     playBtn.textContent = '▶'
@@ -406,7 +406,7 @@ function playerStop() {
   }
   clearPlayerState()
   updatePlayerUI()
-  log('Stopped', '')
+  log(I18N.t('player.stopped'), '')
 }
 
 function playerTogglePause() {
@@ -458,7 +458,7 @@ function playerNext() {
 }
 
 function playFile(filename) {
-  if (!window.airmicWifiIp) { setResp('respFileList', 'WiFi not connected', false); return }
+  if (!window.airmicWifiIp) { setResp('respFileList', I18N.t('files.noWifi'), false); return }
 
   // Same file → stop (row button shows ⏹ = stop, not pause toggle)
   if (s_playingFile === filename) { playerStop(); return }
@@ -494,14 +494,14 @@ function playFile(filename) {
     loaded.style.width = (isFinite(dur) && dur > 0 ? (end / dur) * 100 : 0) + '%'
   })
   audio.addEventListener('ended', () => {
-    log('Playback ended: ' + filename, 'ok')
+    log(I18N.t('player.playbackEnded') + ' ' + filename, 'ok')
     playerStop()
   })
   audio.addEventListener('error', () => {
     // Guard: this audio element was already replaced by a new playFile() call
     if (s_player !== audio) return
-    log('Playback error: ' + filename, 'err')
-    setResp('respFileList', 'Play failed', false)
+    log(I18N.t('player.playbackError') + ' ' + filename, 'err')
+    setResp('respFileList', I18N.t('player.playFailed'), false)
     playerStop()
   })
 
@@ -522,12 +522,12 @@ function playFile(filename) {
   }
 
   audio.play().catch(() => {
-    log('Play failed: ' + filename, 'err')
-    setResp('respFileList', 'Play failed', false)
+    log(I18N.t('player.playFailed') + ': ' + filename, 'err')
+    setResp('respFileList', I18N.t('player.playFailed'), false)
     playerStop()
     return
   })
-  log('Playing: ' + filename, 'ok')
+  log(I18N.t('player.playing') + ' ' + filename, 'ok')
   updatePlayerUI()
   startVUMeter()
 }
@@ -545,7 +545,7 @@ document.getElementById('pProgWrap')?.addEventListener('touchstart', (e) => {
 // ── Download with Progress ──
 
 async function downloadFile(filename, size) {
-  if (!window.airmicWifiIp) { setResp('respFileList', 'WiFi not connected', false); return }
+  if (!window.airmicWifiIp) { setResp('respFileList', I18N.t('files.noWifi'), false); return }
 
   const row = document.querySelector(`[data-filename="${CSS.escape(filename)}"]`)
   if (!row) return
@@ -590,12 +590,12 @@ async function downloadFile(filename, size) {
     setTimeout(() => URL.revokeObjectURL(url), 10000)
 
     const elapsed = (Date.now() - startTime) / 1000
-    log(`Downloaded ${filename} (${(received/1048576).toFixed(2)} MB, ${(received/1048576/elapsed).toFixed(2)} MB/s)`, 'ok')
+    log(`${I18N.t('dl.downloaded')} ${filename} (${(received/1048576).toFixed(2)} MB, ${(received/1048576/elapsed).toFixed(2)} MB/s)`, 'ok')
 
     setTimeout(() => { progressBar.style.display = 'none'; progressFill.style.width = '0%'; progressFill.classList.remove('done'); dlBtn.disabled = false }, 2000)
   } catch (e) {
     progressFill.classList.add('error')
-    log('Download error: ' + e.message, 'err')
+    log(I18N.t('dl.error') + ' ' + e.message, 'err')
     dlBtn.disabled = false
     setTimeout(() => { progressBar.style.display = 'none'; progressFill.className = 'progress-fill' }, 3000)
   }
@@ -609,14 +609,14 @@ function handleFileNotify(cmd, ok, d) {
     if (ok) {
       let offset = 2
       const count = d[offset++] | (d[offset++] << 8)
-      setResp('respFileList', count + ' file' + (count !== 1 ? 's' : '') + ' found', true)
+      setResp('respFileList', I18N.t('files.found').replace('%d', count), true)
       if (window.airmicWifiIp) { fetchFileList() }
       else {
-        document.getElementById('fileList').innerHTML = '<div class="empty-state">WiFi not connected<br><span class="hint">Cannot fetch file details</span></div>'
+        document.getElementById('fileList').innerHTML = '<div class="empty-state">' + I18N.t('files.noWifi') + '<br><span class="hint">' + I18N.t('files.noWifiHint') + '</span></div>'
       }
     } else {
-      setResp('respFileList', 'Failed to get file list', false)
-      document.getElementById('fileList').innerHTML = '<div class="empty-state">Failed to load files</div>'
+      setResp('respFileList', I18N.t('files.failedList'), false)
+      document.getElementById('fileList').innerHTML = '<div class="empty-state">' + I18N.t('files.failed') + '</div>'
       // fileCount removed
     }
     return
@@ -630,20 +630,20 @@ function handleFileNotify(cmd, ok, d) {
         if (s_batchDeletePending <= 0 || s_batchDeleteQueue.length === 0) {
           // Batch complete
           s_batchDeleteQueue = null
-          setResp('respFileList', 'Delete done', true)
-          showToast('Files deleted')
+          setResp('respFileList', I18N.t('notify.deleteDone'), true)
+          showToast(I18N.t('notify.filesDeleted'))
           setTimeout(cmdGetFileList, 500)
         } else {
-          setResp('respFileList', 'Deleted, ' + s_batchDeletePending + ' remaining', true)
+          setResp('respFileList', I18N.t('notify.deletedRemain') + ' ' + s_batchDeletePending + ' ' + I18N.t('notify.remaining'), true)
           cmdDeleteFile(s_batchDeleteQueue.shift())
         }
       } else {
-        setResp('respFileList', 'File deleted', true)
-        showToast('File deleted')
+        setResp('respFileList', I18N.t('notify.fileDeleted'), true)
+        showToast(I18N.t('notify.fileDeleted'))
         setTimeout(cmdGetFileList, 500)
       }
     } else {
-      setResp('respFileList', 'Delete failed', false)
+      setResp('respFileList', I18N.t('notify.deleteFailed'), false)
       // If batch in progress, abort the remaining queue
       s_batchDeleteQueue = null
       s_batchDeletePending = 0
@@ -654,8 +654,8 @@ function handleFileNotify(cmd, ok, d) {
 
   // 0x08: Rename response
   if (cmd === 0x08) {
-    if (ok) { setResp('respFileList', 'File renamed', true); setTimeout(cmdGetFileList, 500) }
-    else { setResp('respFileList', 'Rename failed', false) }
+    if (ok) { setResp('respFileList', I18N.t('notify.renameSuccess'), true); setTimeout(cmdGetFileList, 500) }
+    else { setResp('respFileList', I18N.t('notify.renameFail'), false) }
     document.querySelectorAll('.file-row[data-renaming]').forEach(el => delete el.dataset.renaming)
     return
   }
