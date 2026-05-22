@@ -32,10 +32,36 @@ function showToast(msg) {
 let s_batchDeleteQueue = null  // null = not in batch mode
 let s_batchDeletePending = 0
 
+// ── Sort State ──
+
+let s_sortBy = 'name'
+let s_sortAsc = true
+
+function setSort(mode) {
+  if (s_sortBy === mode) {
+    s_sortAsc = !s_sortAsc
+  } else {
+    s_sortBy = mode
+    s_sortAsc = mode === 'name'
+  }
+  fetchFileList()
+}
+
 // ── Fetch file list via HTTP ──
 
 async function fetchFileList() {
   if (!window.airmicWifiIp) { setResp('respFileList', 'WiFi not connected', false); return }
+  // Sync sort button UI
+  const btnN = document.getElementById('btnSortName')
+  const btnS = document.getElementById('btnSortSize')
+  if (btnN) {
+    btnN.className = 'btn btn-sm btn-sort' + (s_sortBy === 'name' ? ' active' : '')
+    btnN.innerHTML = 'Name ' + (s_sortBy === 'name' ? (s_sortAsc ? '▴' : '▾') : '')
+  }
+  if (btnS) {
+    btnS.className = 'btn btn-sm btn-sort' + (s_sortBy === 'size' ? ' active' : '')
+    btnS.innerHTML = 'Size ' + (s_sortBy === 'size' ? (s_sortAsc ? '▴' : '▾') : '')
+  }
   try {
     const resp = await fetch(`http://${window.airmicWifiIp}/files`)
     if (!resp.ok) throw new Error('HTTP ' + resp.status)
@@ -44,7 +70,11 @@ async function fetchFileList() {
     container.innerHTML = ''
 
     if (data.files && data.files.length > 0) {
-      data.files.forEach(file => {
+      const sorted = [...data.files].sort((a, b) => {
+        let cmp = s_sortBy === 'size' ? a.size - b.size : a.name.localeCompare(b.name)
+        return s_sortAsc ? cmp : -cmp
+      })
+      sorted.forEach(file => {
         const row = document.createElement('div')
         row.className = 'file-row'; row.dataset.filename = file.name
         row.innerHTML = `

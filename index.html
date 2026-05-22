@@ -62,9 +62,11 @@
   <div class="tab-pane active" id="tab-files">
     <div class="file-toolbar">
       <button class="btn btn-ghost btn-sm" id="btnFileList" onclick="cmdGetFileList()">Refresh</button>
-      <div class="toolbar-spacer"></div>
       <button class="btn btn-sm btn-batch" onclick="deleteSelectedFiles(this)">Delete Selected</button>
       <button class="btn btn-sm btn-batch btn-batch-danger" onclick="deleteAllFiles(this)">Delete All</button>
+      <div class="toolbar-spacer"></div>
+      <button class="btn btn-sm btn-sort" id="btnSortName" onclick="setSort('name')">Name &#x25B4;</button>
+      <button class="btn btn-sm btn-sort" id="btnSortSize" onclick="setSort('size')">Size</button>
     </div>
     <div class="file-list" id="fileList">
       <div class="empty-state" id="fileEmpty">
