@@ -208,6 +208,8 @@ body {
   margin-bottom: 8px;
 }
 
+.toolbar-spacer { flex: 1; }
+
 .file-list {
   flex: 1;
   min-height: 0;
@@ -228,6 +230,33 @@ body {
 }
 .file-row:last-child { border-bottom: none; }
 .file-row:hover { background: var(--bg-hover); }
+
+.file-check {
+  appearance: none; -webkit-appearance: none;
+  width: 16px; height: 16px;
+  margin: 0 10px 0 2px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border-light);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.file-check:checked {
+  border-color: var(--amber);
+  background: var(--amber);
+}
+.file-check:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px; top: 1px;
+  width: 4px; height: 8px;
+  border: solid var(--bg-primary);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.file-check:hover { border-color: var(--text-muted); }
 
 .file-info {
   display: flex;
@@ -598,6 +627,21 @@ select option { background: var(--bg-primary); }
 .btn-ghost:not(:disabled):hover { border-color: var(--text-muted); color: var(--text-primary); }
 
 .btn-sm { padding: 6px 12px; font-size: 0.55rem; }
+.btn-batch {
+  padding: 5px 10px;
+  font-size: 0.5rem;
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-batch:hover { border-color: var(--text-muted); color: var(--text-secondary); }
+.btn-batch.confirming { animation: confirmPulse 0.8s ease-in-out infinite; }
+.btn-batch-danger { color: var(--red-dim); border-color: rgba(239,68,68,0.25); }
+.btn-batch-danger:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
 
 /* ── Log Bar ── */
 
