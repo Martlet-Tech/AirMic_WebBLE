@@ -228,6 +228,22 @@ body {
 
 .toolbar-spacer { flex: 1; }
 
+.btn-sort {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.12s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-sort:hover { color: var(--text-primary); border-color: var(--text-secondary); background: var(--bg-tertiary); }
+.btn-sort.active { color: var(--teal); border-color: var(--teal); background: rgba(45,212,191,0.08); }
+
 .file-list {
   flex: 1;
   min-height: 0;
