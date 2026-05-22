@@ -66,10 +66,10 @@ async function fetchFileList() {
           playerStop()
         }
       }
-      document.getElementById('fileCount').textContent = data.files.length + ' file' + (data.files.length !== 1 ? 's' : '')
+      // fileCount removed
     } else {
       container.innerHTML = '<div class="empty-state">No files found</div>'
-      document.getElementById('fileCount').textContent = '0 files'
+      // fileCount removed
     }
     log('Fetched ' + (data.count || data.files?.length || 0) + ' files via HTTP', 'ok')
   } catch (e) {
@@ -309,15 +309,28 @@ function updatePlayerUI() {
   const thumb = document.getElementById('pThumb')
   const timeEl = document.getElementById('pTime')
   const playBtn = document.getElementById('pBtnPlay')
+  const vuCanvas = document.getElementById('pVU')
   if (!bar || !fill || !timeEl || !playBtn) return
 
-  if (!s_player || !s_playingFile) {
-    bar.style.display = 'none'
+  const idle = !s_player || !s_playingFile
+
+  bar.classList.toggle('idle', idle)
+  fill.style.opacity = ''
+  thumb.style.left = idle ? '-999px' : thumb.style.left
+
+  if (idle) {
+    document.getElementById('pFilename').textContent = 'No file selected'
+    timeEl.textContent = '--:-- / --:--'
+    fill.style.width = '0%'
+    playBtn.textContent = '▶'
+    playBtn.classList.add('idle')
+    if (vuCanvas) vuCanvas.style.opacity = '0.12'
     stopVUMeter()
     return
   }
 
-  bar.style.display = 'flex'
+  playBtn.classList.remove('idle')
+  if (vuCanvas) vuCanvas.style.opacity = ''
   document.getElementById('pFilename').textContent = s_playingFile
 
   const cur = s_player.currentTime || 0
@@ -561,7 +574,7 @@ function handleFileNotify(cmd, ok, d) {
     } else {
       setResp('respFileList', 'Failed to get file list', false)
       document.getElementById('fileList').innerHTML = '<div class="empty-state">Failed to load files</div>'
-      document.getElementById('fileCount').textContent = ''
+      // fileCount removed
     }
     return
   }

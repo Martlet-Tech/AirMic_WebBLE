@@ -42,6 +42,7 @@ function log(msg, type = '') {
   box.scrollTop = box.scrollHeight
   logCount++
   document.getElementById('logBadge').textContent = logCount
+  document.getElementById('topLogBtn').classList.toggle('has-entries', logCount > 0)
   // Auto-open log on first error
   if (type === 'err') {
     document.getElementById('logBar').classList.add('open')
@@ -99,11 +100,11 @@ function onDisc() {
 // ── UI State ──
 
 function setUI(on) {
-  const led = document.getElementById('topLed')
+  const icon = document.getElementById('topBtIcon')
   const st = document.getElementById('topStatus')
   const deviceEl = document.getElementById('topDevice')
 
-  led.className = 'top-led' + (on ? ' connected' : '')
+  if (icon) icon.classList.toggle('connected', on)
   st.className = 'top-status' + (on ? ' connected' : '')
   st.textContent = on ? 'CONNECTED' : 'NOT CONNECTED'
   deviceEl.textContent = on && device?.name ? device.name : ''
@@ -114,7 +115,7 @@ function setUI(on) {
 
   // Reset file panel on disconnect
   if (!on) {
-    document.getElementById('fileCount').textContent = ''
+    // fileCount removed
     document.getElementById('respFileList').innerHTML = '&mdash;'
     document.getElementById('respFileList').className = 'resp-msg'
     document.getElementById('fileList').innerHTML =

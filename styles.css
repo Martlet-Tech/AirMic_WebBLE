@@ -92,17 +92,21 @@ body {
 }
 .top-conn:active { background: var(--bg-hover); }
 
-.top-led {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--text-muted);
+.top-bt-icon {
+  width: 16px; height: 16px;
+  fill: var(--text-muted);
   flex-shrink: 0;
-  transition: background 0.3s, box-shadow 0.3s;
+  transition: fill 0.3s, filter 0.3s;
 }
-.top-led.connected {
-  background: var(--green);
-  box-shadow: 0 0 6px var(--green);
-  animation: ledPulse 2.5s ease-in-out infinite;
+.top-bt-icon.connected {
+  fill: var(--blue);
+  filter: drop-shadow(0 0 6px var(--blue));
+  animation: btPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes btPulse {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px var(--blue)); }
+  50% { opacity: 0.55; filter: drop-shadow(0 0 10px var(--blue)); }
 }
 
 @keyframes ledPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
@@ -135,6 +139,20 @@ body {
   animation: ledPulse 2.5s ease-in-out infinite;
 }
 .top-wifi .wifi-icon.connecting { color: var(--amber); animation: wifiPulse 1s ease-in-out infinite; }
+
+.top-log-btn {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.55rem;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: all 0.12s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.top-log-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.top-log-btn.has-entries { color: var(--teal); }
 
 @keyframes wifiPulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
 
@@ -353,7 +371,7 @@ body {
 /* ── Player Bar ── */
 
 .player-bar {
-  display: none;
+  display: flex;
   flex-direction: column;
   flex-shrink: 0;
   gap: 3px;
@@ -361,7 +379,12 @@ body {
   background: linear-gradient(180deg, var(--bg-tertiary) 0%, #0e1422 100%);
   border-top: 1px solid var(--border);
   z-index: 5;
+  transition: opacity 0.25s;
 }
+.player-bar.idle { opacity: 0.55; }
+.player-bar.idle .p-row-vu { border-color: rgba(245,166,35,0.04); }
+.player-bar.idle .p-prog { background: rgba(42,58,84,0.5); }
+.player-bar.idle .p-vol-slider { opacity: 0.5; }
 
 .p-row { display: flex; align-items: center; }
 .p-row-fn { justify-content: space-between; }
@@ -487,15 +510,17 @@ body {
 .p-btn:active { transform: scale(0.92); }
 
 .p-btn-main {
-  font-size: 0.95rem;
+  font-size: 1.4rem;
   color: var(--amber);
-  padding: 3px 14px;
-  margin: 0 2px;
+  padding: 2px 18px;
+  margin: 0 4px;
   background: rgba(245,166,35,0.07);
   border: 1px solid rgba(245,166,35,0.18);
-  border-radius: 6px;
+  border-radius: 8px;
+  line-height: 1;
 }
 .p-btn-main:hover { background: rgba(245,166,35,0.15); border-color: rgba(245,166,35,0.35); }
+.p-btn-main.idle { opacity: 0.35; }
 
 .p-btn-stop:hover { color: var(--red); background: rgba(239,68,68,0.1); }
 
@@ -580,13 +605,6 @@ body {
 }
 .resp-msg.ok { color: var(--green); border-color: rgba(46,204,113,0.25); }
 .resp-msg.err { color: var(--red); border-color: rgba(239,68,68,0.25); }
-
-.file-count {
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  color: var(--text-muted);
-  margin-left: auto;
-}
 
 /* ── Settings Tab ── */
 
@@ -850,10 +868,12 @@ select option { background: var(--bg-primary); }
 /* ── Log Bar ── */
 
 .log-bar {
+  display: none;
   flex-shrink: 0;
-  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   background: var(--bg-secondary);
 }
+.log-bar.open { display: block; }
 
 .log-bar-header {
   display: flex;

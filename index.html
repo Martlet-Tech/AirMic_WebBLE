@@ -18,7 +18,9 @@
   </div>
   <div class="top-right">
     <div class="top-conn" id="topConn" onclick="toggleConnect()">
-      <span class="top-led" id="topLed"></span>
+      <svg class="top-bt-icon" id="topBtIcon" viewBox="0 0 494.296 494.296" width="16" height="16">
+        <path d="M456.098,140.898L212.156,0v212.5L58.203,123.579l-20.006,34.638l153.97,88.931l-153.97,88.931l20.006,34.638l153.952-88.921v212.5l243.943-140.898l-183.955-106.25L456.098,140.898z M252.156,69.296l123.967,71.602L252.156,212.5V69.296z M376.123,353.398L252.156,425V281.796L376.123,353.398z"/>
+      </svg>
       <span class="top-status" id="topStatus">NOT CONNECTED</span>
       <span class="top-device" id="topDevice"></span>
     </div>
@@ -31,8 +33,19 @@
       </svg>
       <span class="top-ip" id="topIp">--</span>
     </div>
+    <div class="top-log-btn" id="topLogBtn" onclick="toggleLog()" title="Log">&#x29;&#x29;</div>
   </div>
 </header>
+
+<!-- ─── Collapsible Log ─── -->
+<div class="log-bar" id="logBar">
+  <div class="log-bar-header" onclick="toggleLog()">
+    <span>Log</span>
+    <span class="log-badge" id="logBadge">0</span>
+    <span class="log-toggle" id="logToggle">&#x25B4;</span>
+  </div>
+  <div class="log-content" id="logBox"></div>
+</div>
 
 <!-- ─── Tab Bar ─── -->
 <nav class="tab-bar" id="tabBar">
@@ -49,7 +62,6 @@
   <div class="tab-pane active" id="tab-files">
     <div class="file-toolbar">
       <button class="btn btn-ghost btn-sm" id="btnFileList" onclick="cmdGetFileList()">Refresh</button>
-      <span class="file-count" id="fileCount"></span>
       <div class="toolbar-spacer"></div>
       <button class="btn btn-sm btn-batch" onclick="deleteSelectedFiles(this)">Delete Selected</button>
       <button class="btn btn-sm btn-batch btn-batch-danger" onclick="deleteAllFiles(this)">Delete All</button>
@@ -60,8 +72,7 @@
         <div class="hint">File list loads automatically when connected</div>
       </div>
     </div>
-    <div class="resp-msg" id="respFileList">&mdash;</div>
-  </div>
+	  </div>
 
   <!-- === Settings Tab === -->
   <div class="tab-pane" id="tab-settings">
@@ -197,16 +208,7 @@
   </div>
 </div>
 
-<!-- ─── Collapsible Log ─── -->
-<div class="log-bar" id="logBar">
-  <div class="log-bar-header" onclick="toggleLog()">
-    <span>Log</span>
-    <span class="log-badge" id="logBadge">0</span>
-    <span class="log-toggle" id="logToggle">&#x25B4;</span>
-  </div>
-  <div class="log-content" id="logBox"></div>
-</div>
-
+<div class="resp-msg" id="respFileList">&mdash;</div>
 
 <script src="protocol.js"></script>
 <script src="file_ops.js"></script>
