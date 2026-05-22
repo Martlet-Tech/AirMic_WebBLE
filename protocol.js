@@ -56,6 +56,32 @@ async function cmdGetWifiStatus() {
   await send(new Uint8Array([0x09, 0x00]).buffer)
 }
 
+// ── Generic Config Commands ──
+
+async function cmdConfigList() {
+  await send(new Uint8Array([0x0B, 0x00]).buffer)
+}
+
+async function cmdConfigSet(key, type, valueArr) {
+  const keyB = new TextEncoder().encode(key)
+  const total = 1 + keyB.length + 1 + valueArr.length
+  const b = new ArrayBuffer(2 + total)
+  const v = new DataView(b)
+  v.setUint8(0, 0x0C); v.setUint8(1, total)
+  let off = 2
+  v.setUint8(off++, keyB.length)
+  for (let i = 0; i < keyB.length; i++) v.setUint8(off++, keyB[i])
+  v.setUint8(off++, type)
+  for (let i = 0; i < valueArr.length; i++) v.setUint8(off++, valueArr[i])
+  await send(b)
+}
+
+// Helper: set encoder format from the dropdown
+function cmdSetEncoder() {
+  const v = parseInt(document.getElementById('selEncoder').value)
+  cmdConfigSet('encoder', 1, [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF])
+}
+
 async function cmdDeleteFile(filename) {
   const b = new ArrayBuffer(2 + 1 + filename.length)
   const v = new DataView(b)
@@ -356,7 +382,9 @@ function onNotify(e) {
 
   if (cmd === 0x04 && ok) {
     const ts = d[3] | (d[4] << 8) | (d[5] << 16) | (d[6] << 24)
-    setResp('respStat', 'REC=' + d[2] + '  TIME=' + new Date(ts * 1000).toISOString(), true)
+    const encNames = ['WAV','AAC','ALAC']
+    const enc = d[7] || 1
+    setResp('respStat', 'REC=' + d[2] + '  ENC=' + (encNames[enc] || '?') + '  TIME=' + new Date(ts * 1000).toISOString(), true)
   }
 
   if (cmd === 0x05) {
@@ -390,6 +418,38 @@ function onNotify(e) {
     if (ok) { setResp('respFileList', 'File renamed', true); setTimeout(cmdGetFileList, 500) }
     else { setResp('respFileList', 'Rename failed', false) }
     document.querySelectorAll('.file-row[data-renaming]').forEach(el => delete el.dataset.renaming)
+  }
+
+  // ── Config List (0x0B) ──
+  if (cmd === 0x0B && ok) {
+    let off = 2
+    const count = d[off++]
+    for (let i = 0; i < count; i++) {
+      const keyLen = d[off++]
+      const key = new TextDecoder().decode(d.slice(off, off + keyLen)); off += keyLen
+      const type = d[off++]
+      if (key === 'encoder' && type === 1) {
+        const val = d[off] | (d[off+1]<<8) | (d[off+2]<<16) | (d[off+3]<<24)
+        document.getElementById('selEncoder').value = val
+        off += 4
+      } else if (key === 'samplerate' && type === 1) {
+        const val = d[off] | (d[off+1]<<8) | (d[off+2]<<16) | (d[off+3]<<24)
+        const sel = document.getElementById('selRate')
+        if (sel) sel.value = String(val)
+        off += 4
+      } else if (key === 'channels' && type === 1) {
+        const val = d[off] | (d[off+1]<<8) | (d[off+2]<<16) | (d[off+3]<<24)
+        const sel = document.getElementById('selCh')
+        if (sel) sel.value = String(val)
+        off += 4
+      }
+    }
+  }
+
+  // ── Config Set (0x0C) ──
+  if (cmd === 0x0C) {
+    setResp('respSync', ok ? 'Config saved' : 'Config ERROR', ok)
+    if (ok) setTimeout(cmdConfigList, 500)  // refresh
   }
 
   if (cmd === 0x09) {

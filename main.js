@@ -109,7 +109,7 @@ function setUI(on) {
   deviceEl.textContent = on && device?.name ? device.name : ''
 
   // Enable/disable BLE-dependent buttons
-  const ids = ['btnSync', 'btnRate', 'btnCh', 'btnStat', 'btnWifi', 'btnFileList']
+  const ids = ['btnSync', 'btnRate', 'btnCh', 'btnEnc', 'btnStat', 'btnWifi', 'btnFileList']
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = !on })
 
   // Reset file panel on disconnect
@@ -127,6 +127,7 @@ function setUI(on) {
 
   if (on) {
     setTimeout(cmdGetWifiStatus, 1000)
+    setTimeout(cmdConfigList, 2000)
   } else {
     wifiReset()
   }

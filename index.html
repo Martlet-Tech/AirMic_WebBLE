@@ -92,13 +92,13 @@
       <div class="setting-title">Audio Config</div>
       <div class="field-row">
         <div class="field-group">
-          <label class="field-label">Sample Rate</label>
-          <select id="selRate">
-            <option value="8000">8000 Hz</option>
-            <option value="16000">16000 Hz</option>
-            <option value="48000" selected>48000 Hz</option>
+          <label class="field-label">Encoder</label>
+          <select id="selEncoder">
+            <option value="0">WAV</option>
+            <option value="1" selected>AAC</option>
+            <option value="2">ALAC</option>
           </select>
-          <button class="btn btn-secondary btn-sm" onclick="cmdSampleRate()" id="btnRate" disabled style="margin-top:6px">Apply</button>
+          <button class="btn btn-secondary btn-sm" onclick="cmdSetEncoder()" id="btnEnc" disabled style="margin-top:6px">Apply</button>
         </div>
         <div class="field-group">
           <label class="field-label">Channels</label>
