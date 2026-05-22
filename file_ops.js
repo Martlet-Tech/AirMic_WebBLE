@@ -51,7 +51,6 @@ async function fetchFileList() {
         row.querySelector('.download').onclick = () => downloadFile(file.name, file.size)
         row.querySelector('.rename').onclick = () => startRename(file.name)
         row.querySelector('.delete').onclick = (e) => startDelete(file.name, e.currentTarget)
-        row.querySelector('.file-name').onclick = () => startRename(file.name)
         container.appendChild(row)
       })
       document.getElementById('fileCount').textContent = data.files.length + ' file' + (data.files.length !== 1 ? 's' : '')
