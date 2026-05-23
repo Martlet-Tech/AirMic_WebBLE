@@ -141,6 +141,8 @@ const I18N = (() => {
       'wifi.configError':      'Config ERROR',
       'wifi.timeout':          'Connection timeout',
       'wifi.connectingIp':     'Connecting...',
+      'wifi.stillTrying':      'Still trying... check SSID/password?',
+      'wifi.autoConnecting':   'Auto-connecting WiFi...',
 
       // ── Time ──
       'time.synced':    'Time synced',
@@ -317,6 +319,8 @@ const I18N = (() => {
       'wifi.configError':      '配置错误',
       'wifi.timeout':          '连接超时',
       'wifi.connectingIp':     '连接中...',
+      'wifi.stillTrying':      '正在重连... 检查 SSID/密码？',
+      'wifi.autoConnecting':   'WiFi 自动连接中...',
 
       // ── Time ──
       'time.synced':    '时间已同步',

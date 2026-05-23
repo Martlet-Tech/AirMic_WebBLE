@@ -129,11 +129,27 @@ function setUI(on) {
   if (on) {
     // Show brief warning that recording is disabled while connected
     showToast(I18N.t('notify.recBlocked'), 500)
-    setTimeout(cmdGetWifiStatus, 1000)
+    if (!autoConnectWifi()) {
+      setTimeout(cmdGetWifiStatus, 1000)
+    } else {
+      showToast(I18N.t('wifi.autoConnecting'), 1500)
+    }
     setTimeout(cmdConfigList, 2000)
   } else {
     wifiReset()
   }
+}
+
+function autoConnectWifi() {
+  const raw = localStorage.getItem('airmic_wifi_settings')
+  if (!raw) return false
+  try {
+    const s = JSON.parse(raw)
+    if (!s.ssid) return false
+    // 不碰表单字段，直接从 localStorage 取值发送
+    _sendWifiSetup(s.ssid, s.password || '')
+    return true
+  } catch (_) { return false }
 }
 
 function wifiReset() {

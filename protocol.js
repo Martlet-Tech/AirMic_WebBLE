@@ -138,10 +138,8 @@ function loadWifiSettings() {
   } catch (_) {}
 }
 
-async function cmdWifiSetup() {
-  const ssid = document.getElementById('wifiSsid').value
-  const password = document.getElementById('wifiPassword').value
-  if (!ssid) { setResp('respWifiEdit', I18N.t('wifi.ssidRequired'), false); return }
+async function _sendWifiSetup(ssid, password) {
+  if (!ssid) return
 
   saveWifiSettings(ssid, password)
   window.airmicWifiSsid = ssid
@@ -165,11 +163,17 @@ async function cmdWifiSetup() {
   await send(b)
 }
 
+async function cmdWifiSetup() {
+  const ssid = document.getElementById('wifiSsid').value
+  const password = document.getElementById('wifiPassword').value
+  if (!ssid) { setResp('respWifiEdit', I18N.t('wifi.ssidRequired'), false); return }
+  _sendWifiSetup(ssid, password)
+}
+
 // ── WiFi Polling ──
 
 let wifiPollInterval = null
 let wifiPollAttempts = 0
-const MAX_WIFI_POLL = 15
 const WIFI_POLL_MS = 2000
 
 function stopWifiPoll() {
@@ -182,10 +186,10 @@ function startWifiPoll() {
   wifiPollInterval = setInterval(() => {
     wifiPollAttempts++
     cmdGetWifiStatus().catch(() => {})
-    if (wifiPollAttempts >= MAX_WIFI_POLL) {
-      stopWifiPoll()
-      setResp('respWifiEdit', I18N.t('wifi.timeout'), false)
-      document.querySelector('.wifi-icon')?.classList.remove('connecting')
+    // 不再有 MAX_WIFI_POLL 硬截止
+    // 60s 后提示检查密码，但继续轮询
+    if (wifiPollAttempts === 30) {
+      setResp('respWifiEdit', I18N.t('wifi.stillTrying'), false)
     }
   }, WIFI_POLL_MS)
 }
@@ -295,7 +299,12 @@ function onNotify(e) {
       } else if (status === 1) {
         setResp('respWifiEdit', I18N.t('wifi.obtainingIp'), false)
       } else {
-        setWifiConnected(null)
+        // status === 0 — 未连接
+        // wifi_stop() 会触发 DISCONNECTED → 发 status=0
+        // 如果正在自动连接中，不重置 UI 避免 icon 闪烁
+        if (!window.airmicWifiSsid) {
+          setWifiConnected(null)
+        }
         setResp('respWifiEdit', I18N.t('wifi.notConnected'), false)
       }
     } else {
