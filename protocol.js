@@ -82,6 +82,11 @@ function cmdSetEncoder() {
   cmdConfigSet('encoder', 1, [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF])
 }
 
+function cmdSetAgcMode() {
+  const v = parseInt(document.getElementById('selAgcMode').value)
+  cmdConfigSet('agc_mode', 1, [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF])
+}
+
 async function cmdDeleteFile(filename) {
   const b = new ArrayBuffer(2 + 1 + filename.length)
   const v = new DataView(b)
@@ -227,12 +232,15 @@ function onNotify(e) {
 
   // ── Config List (0x0B) ──
   if (cmd === 0x0B && ok) {
+    console.log('[0x0B] len=' + d.length + ' raw=' + Array.from(d).map(b => b.toString(16).padStart(2,'0')).join(' '))
+	    console.log('[0x0B] config list count=' + d[2])
     let off = 2
     const count = d[off++]
     for (let i = 0; i < count; i++) {
       const keyLen = d[off++]
       const key = new TextDecoder().decode(d.slice(off, off + keyLen)); off += keyLen
       const type = d[off++]
+      console.log('[0x0B] entry key="' + key + '" type=' + type + ' off=' + off)
       if (key === 'encoder' && type === 1) {
         const val = d[off] | (d[off+1]<<8) | (d[off+2]<<16) | (d[off+3]<<24)
         document.getElementById('selEncoder').value = val
@@ -247,6 +255,15 @@ function onNotify(e) {
         const sel = document.getElementById('selCh')
         if (sel) sel.value = String(val)
         off += 4
+      } else if (key === 'agc_mode' && type === 1) {
+        const val = d[off] | (d[off+1]<<8) | (d[off+2]<<16) | (d[off+3]<<24)
+        const sel = document.getElementById('selAgcMode')
+        console.log('[0x0B] agc_mode=' + val + ' sel=' + (sel ? sel.value : 'null'))
+        if (sel) sel.value = val
+        off += 4
+      } else {
+        console.warn('[0x0B] skip unknown key="' + key + '" type=' + type)
+        off += 4  // assume int32 for unknown keys
       }
     }
   }

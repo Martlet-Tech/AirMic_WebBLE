@@ -124,6 +124,14 @@
           </select>
           <button class="btn btn-secondary btn-sm" onclick="cmdChannels()" id="btnCh" disabled style="margin-top:6px" data-i18n="settings.apply">Apply</button>
         </div>
+        <div class="field-group">
+          <label class="field-label" data-i18n="settings.agcMode">AGC Mode</label>
+          <select id="selAgcMode">
+            <option value="0" data-i18n="agc.none">None</option>
+            <option value="1" selected data-i18n="agc.alc">ALC</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="cmdSetAgcMode()" id="btnAgcMode" disabled style="margin-top:6px" data-i18n="settings.apply">Apply</button>
+        </div>
       </div>
     </div>
 

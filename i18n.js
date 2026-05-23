@@ -59,6 +59,7 @@ const I18N = (() => {
       'settings.channels':    'Channels',
       'settings.mono':        'Mono',
       'settings.stereo':      'Stereo',
+      'settings.agcMode':     'AGC Mode',
       'settings.apply':       'Apply',
       'settings.deviceStatus':'Device Status',
       'settings.queryStatus': 'Query Status',
@@ -149,6 +150,9 @@ const I18N = (() => {
       'enc.alac':  'ALAC',
       'enc.set':   'Rate set',
       'enc.chSet': 'Channels set',
+      'agc.none':  'None',
+      'agc.alc':   'ALC',
+      'agc.drc':   'DRC (TODO)',
 
       // ── Download ──
       'dl.downloaded':  'Downloaded',
@@ -228,6 +232,7 @@ const I18N = (() => {
       'settings.channels':    '声道',
       'settings.mono':        '单声道',
       'settings.stereo':      '立体声',
+      'settings.agcMode':     'AGC 模式',
       'settings.apply':       '应用',
       'settings.deviceStatus':'设备状态',
       'settings.queryStatus': '查询状态',
@@ -318,6 +323,9 @@ const I18N = (() => {
       'enc.alac':  'ALAC',
       'enc.set':   '码率已设置',
       'enc.chSet': '声道已设置',
+      'agc.none':  '无',
+      'agc.alc':   'ALC',
+      'agc.drc':   'DRC (TODO)',
 
       // ── Download ──
       'dl.downloaded':  '已下载',
