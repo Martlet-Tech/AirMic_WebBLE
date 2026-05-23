@@ -86,7 +86,7 @@ async function fetchFileList() {
         const row = document.createElement('div')
         row.className = 'file-row'; row.dataset.filename = file.name
         row.innerHTML = `
-          <input type="checkbox" class="file-check" data-filename="${escapeHtml(file.name)}">
+          <input type="checkbox" class="file-check" data-filename="${escapeHtml(file.name)}" data-size="${file.size}">
           <div class="file-info">
             <span class="file-name">${escapeHtml(file.name)}</span>
             <span class="file-size">${formatFileSize(file.size)}</span>
@@ -174,6 +174,18 @@ function startDelete(filename, btnEl) {
     btnEl.dataset.confirming = ''; btnEl.classList.remove('confirming')
     btnEl.textContent = '✕'
   }, 3000)
+}
+
+// ── Batch Download ──
+
+function downloadSelectedFiles() {
+  const checked = document.querySelectorAll('.file-check:checked')
+  if (checked.length === 0) { showToast(I18N.t('notify.noSel')); return }
+  checked.forEach(cb => {
+    const filename = cb.dataset.filename
+    const size = parseInt(cb.dataset.size || '0')
+    downloadFile(filename, size)
+  })
 }
 
 // ── Batch Delete ──

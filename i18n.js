@@ -30,6 +30,7 @@ const I18N = (() => {
 
       // ── Files Tab ──
       'files.refresh':        'Refresh',
+      'files.downloadSelected':'Download Selected',
       'files.deleteSelected': 'Delete Selected',
       'files.deleteAll':      'Delete All',
       'files.sortName':       'Name',
@@ -205,6 +206,7 @@ const I18N = (() => {
 
       // ── Files Tab ──
       'files.refresh':        '刷新',
+      'files.downloadSelected':'下载选中',
       'files.deleteSelected': '删除选中',
       'files.deleteAll':      '全部删除',
       'files.sortName':       '名称',
