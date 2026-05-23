@@ -304,6 +304,11 @@ function onNotify(e) {
         // 如果正在自动连接中，不重置 UI 避免 icon 闪烁
         if (!window.airmicWifiSsid) {
           setWifiConnected(null)
+          // 首次检查且无 saved SSID → 弹出 WiFi 配置引导
+          if (window.airmicWifiFirstCheck) {
+            window.airmicWifiFirstCheck = false
+            document.getElementById('wifiGuide')?.classList.add('open')
+          }
         }
         setResp('respWifiEdit', I18N.t('wifi.notConnected'), false)
       }

@@ -241,6 +241,17 @@
   </div>
 </div>
 
+<div class="overlay" id="wifiGuide">
+  <div class="overlay-box">
+    <div class="overlay-title" data-i18n="wifi.guideTitle">WiFi Setup</div>
+    <div class="overlay-body" data-i18n="wifi.guideBody">WiFi is not configured. Go to Settings to connect to a network.</div>
+    <div class="overlay-actions">
+      <button class="btn btn-ghost btn-sm" onclick="hideWifiGuide()" data-i18n="wifi.guideLater">Later</button>
+      <button class="btn btn-primary btn-sm" onclick="goWifiSettings()" data-i18n="wifi.guideGo">Go to Settings</button>
+    </div>
+  </div>
+</div>
+
 <script src="i18n.js"></script>
 <script src="protocol.js"></script>
 <script src="file_ops.js"></script>

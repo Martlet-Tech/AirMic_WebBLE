@@ -129,6 +129,7 @@ function setUI(on) {
   if (on) {
     // Show brief warning that recording is disabled while connected
     showToast(I18N.t('notify.recBlocked'), 500)
+    window.airmicWifiFirstCheck = true  // 标记首次 WiFi 状态检查
     if (!autoConnectWifi()) {
       setTimeout(cmdGetWifiStatus, 1000)
     } else {
@@ -138,6 +139,15 @@ function setUI(on) {
   } else {
     wifiReset()
   }
+}
+
+function hideWifiGuide() {
+  document.getElementById('wifiGuide')?.classList.remove('open')
+}
+
+function goWifiSettings() {
+  hideWifiGuide()
+  document.querySelector('[data-tab="settings"]')?.click()
 }
 
 function autoConnectWifi() {

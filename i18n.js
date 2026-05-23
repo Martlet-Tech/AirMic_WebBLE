@@ -143,6 +143,10 @@ const I18N = (() => {
       'wifi.connectingIp':     'Connecting...',
       'wifi.stillTrying':      'Still trying... check SSID/password?',
       'wifi.autoConnecting':   'Auto-connecting WiFi...',
+      'wifi.guideTitle':       'WiFi Setup',
+      'wifi.guideBody':        'WiFi is not configured. Go to Settings to connect to a network.',
+      'wifi.guideGo':          'Go to Settings',
+      'wifi.guideLater':       'Later',
 
       // ── Time ──
       'time.synced':    'Time synced',
@@ -321,6 +325,10 @@ const I18N = (() => {
       'wifi.connectingIp':     '连接中...',
       'wifi.stillTrying':      '正在重连... 检查 SSID/密码？',
       'wifi.autoConnecting':   'WiFi 自动连接中...',
+      'wifi.guideTitle':       'WiFi 设置',
+      'wifi.guideBody':        '未配置 WiFi。请前往设置页面连接网络。',
+      'wifi.guideGo':          '前往设置',
+      'wifi.guideLater':       '稍后',
 
       // ── Time ──
       'time.synced':    '时间已同步',
