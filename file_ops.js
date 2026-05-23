@@ -18,13 +18,13 @@ function escapeHtml(s) {
 
 let s_toastTimer = null
 
-function showToast(msg) {
+function showToast(msg, duration) {
   const el = document.getElementById('toast')
   if (!el) return
   el.textContent = msg
   el.classList.add('show')
   clearTimeout(s_toastTimer)
-  s_toastTimer = setTimeout(() => el.classList.remove('show'), 2500)
+  s_toastTimer = setTimeout(() => el.classList.remove('show'), duration || 2500)
 }
 
 // ── Batch Delete State ──
@@ -68,6 +68,14 @@ async function fetchFileList() {
     const data = await resp.json()
     const container = document.getElementById('fileList')
     container.innerHTML = ''
+
+    // Update storage info bar — show used / total
+    const storageEl = document.getElementById('storageInfo')
+    if (storageEl && data.free_bytes !== undefined) {
+      const used = formatFileSize(data.total_bytes - data.free_bytes)
+      const total = formatFileSize(data.total_bytes)
+      storageEl.textContent = I18N.t('storage.used') + ' ' + used + ' / ' + total
+    }
 
     if (data.files && data.files.length > 0) {
       const sorted = [...data.files].sort((a, b) => {

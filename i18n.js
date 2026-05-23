@@ -122,6 +122,7 @@ const I18N = (() => {
       'notify.renameSuccess':  'File renamed',
       'notify.renameFail':     'Rename failed',
       'notify.noWifi':         'WiFi not connected',
+      'notify.recBlocked':    'Recording disabled while connected',
 
       // ── Status ──
       'stat.rec':   'REC',
@@ -167,6 +168,7 @@ const I18N = (() => {
       'misc.fetchErr':'Fetch error:',
       'misc.otaReq':  'OTA requires WiFi connection',
       'misc.http':    'HTTP',
+      'storage.used': 'Used',
 
       // ── Log ──
       'log.tx':       'TX →',
@@ -295,6 +297,7 @@ const I18N = (() => {
       'notify.renameSuccess':  '文件已重命名',
       'notify.renameFail':     '重命名失败',
       'notify.noWifi':         'WiFi 未连接',
+      'notify.recBlocked':    '连接中已禁用录音',
 
       // ── Status ──
       'stat.rec':   '录音',
@@ -340,6 +343,7 @@ const I18N = (() => {
       'misc.fetchErr':'获取错误：',
       'misc.otaReq':  'OTA 需要 WiFi 连接',
       'misc.http':    'HTTP',
+      'storage.used': '已用',
 
       // ── Log ──
       'log.tx':       'TX →',

@@ -228,6 +228,13 @@ body {
 
 .toolbar-spacer { flex: 1; }
 
+.storage-info {
+  font-size: 11px;
+  color: #8892a0;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
 .btn-sort {
   font-family: var(--font-mono);
   font-size: 0.5rem;

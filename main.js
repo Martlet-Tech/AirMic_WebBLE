@@ -127,6 +127,8 @@ function setUI(on) {
   document.getElementById('aboutBle').textContent = on ? I18N.t('conn.connected') : I18N.t('conn.notConnectedShort')
 
   if (on) {
+    // Show brief warning that recording is disabled while connected
+    showToast(I18N.t('notify.recBlocked'), 500)
     setTimeout(cmdGetWifiStatus, 1000)
     setTimeout(cmdConfigList, 2000)
   } else {
