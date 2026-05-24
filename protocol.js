@@ -170,6 +170,23 @@ async function cmdWifiSetup() {
   _sendWifiSetup(ssid, password)
 }
 
+// ── RID OTP ──
+
+async function cmdGetRidStatus() {
+  await send(new Uint8Array([0x0E, 0x00]).buffer)
+}
+
+async function cmdRidUnlock(confirmText) {
+  const bytes = new TextEncoder().encode(confirmText)
+  const b = new ArrayBuffer(2 + 1 + bytes.length)
+  const v = new DataView(b)
+  v.setUint8(0, 0x0D)
+  v.setUint8(1, 1 + bytes.length)
+  v.setUint8(2, bytes.length)
+  for (let i = 0; i < bytes.length; i++) v.setUint8(3 + i, bytes[i])
+  await send(b)
+}
+
 // ── WiFi Polling ──
 
 let wifiPollInterval = null
@@ -317,5 +334,18 @@ function onNotify(e) {
       setResp('respWifiEdit', I18N.t('wifi.failedStatus'), false)
       stopWifiPoll()
     }
+  }
+
+  if (cmd === 0x0D) {
+    if (ok) {
+      updateRidUI(true)
+      setResp('respRid', I18N.t('rid.unlocked'), true)
+    } else {
+      setResp('respRid', I18N.t('rid.unlockFailed'), false)
+    }
+  }
+
+  if (cmd === 0x0E && ok && d.length >= 3) {
+    updateRidUI(d[2] !== 0)
   }
 }

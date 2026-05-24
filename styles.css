@@ -1030,6 +1030,50 @@ select option { background: var(--bg-primary); }
   line-height: 1.5;
 }
 
+/* ── RID ── */
+
+.rid-disclaimer {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.15);
+  border-radius: 6px;
+}
+
+.rid-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.65rem;
+  margin-bottom: 4px;
+}
+
+.rid-status-label {
+  color: var(--text-muted);
+}
+
+.rid-status-val {
+  font-weight: 600;
+}
+.rid-status-val.locked   { color: var(--red); }
+.rid-status-val.unlocked { color: var(--green); }
+
+.rid-unlocked-msg {
+  font-size: 0.55rem;
+  color: var(--green);
+  padding: 8px 12px;
+  background: rgba(46,204,113,0.06);
+  border: 1px solid rgba(46,204,113,0.15);
+  border-radius: 6px;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+/* ── Overlay ── */
+
 .overlay-actions {
   display: flex;
   gap: 8px;

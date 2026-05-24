@@ -138,6 +138,7 @@ function setUI(on) {
     setTimeout(cmdConfigList, 2000)
     setTimeout(cmdTimeSync, 2500)  // 自动同步设备时间
     setTimeout(cmdGetVersion, 3000)  // 读取固件版本
+    setTimeout(cmdGetRidStatus, 3500)  // 读取 RID 解锁状态
   } else {
     wifiReset()
   }
@@ -150,6 +151,53 @@ function hideWifiGuide() {
 function goWifiSettings() {
   hideWifiGuide()
   document.querySelector('[data-tab="settings"]')?.click()
+}
+
+// ── RID OTP Unlock ──
+
+function updateRidUI(unlocked) {
+  const statusEl = document.getElementById('ridStatusVal')
+  const lockedUI = document.getElementById('ridLockedUI')
+  const unlockedUI = document.getElementById('ridUnlockedUI')
+  if (!statusEl || !lockedUI || !unlockedUI) return
+  if (unlocked) {
+    statusEl.textContent = I18N.t('rid.unlocked')
+    statusEl.className = 'rid-status-val unlocked'
+    lockedUI.style.display = 'none'
+    unlockedUI.style.display = ''
+  } else {
+    statusEl.textContent = I18N.t('rid.locked')
+    statusEl.className = 'rid-status-val locked'
+    lockedUI.style.display = ''
+    unlockedUI.style.display = 'none'
+  }
+}
+
+function onRidConfirmInput() {
+  const input = document.getElementById('ridConfirm')
+  const btn = document.getElementById('btnRidUnlock')
+  if (!input || !btn) return
+  btn.disabled = input.value !== 'UNLOCK'
+}
+
+function startRidUnlock() {
+  const input = document.getElementById('ridConfirm')
+  if (!input || input.value !== 'UNLOCK') return
+  document.getElementById('ridConfirmOverlay')?.classList.add('open')
+}
+
+function cancelRidUnlock() {
+  document.getElementById('ridConfirmOverlay')?.classList.remove('open')
+}
+
+function confirmRidUnlock() {
+  document.getElementById('ridConfirmOverlay')?.classList.remove('open')
+  const input = document.getElementById('ridConfirm')
+  if (!input || input.value !== 'UNLOCK') return
+  const btn = document.getElementById('btnRidUnlock')
+  if (btn) btn.disabled = true
+  setResp('respRid', I18N.t('rid.burning'), false)
+  cmdRidUnlock(input.value)
 }
 
 function autoConnectWifi() {

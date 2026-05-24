@@ -136,6 +136,30 @@
       </select>
     </div>
 
+    <div class="setting-group" id="ridGroup">
+      <div class="setting-title" data-i18n="rid.title">Remote ID (RID)</div>
+      <div class="rid-disclaimer" data-i18n="rid.disclaimer">
+        Remote ID broadcasting uses eFuse OTP (one-time programmable) memory. Once unlocked, this operation is physically irreversible. Only proceed if your local regulations require Remote ID and you accept full legal responsibility for operating a drone broadcaster.
+      </div>
+      <div class="rid-status-row">
+        <span class="rid-status-label" data-i18n="rid.status">Status:</span>
+        <span class="rid-status-val locked" id="ridStatusVal" data-i18n="rid.locked">Locked</span>
+      </div>
+      <div id="ridLockedUI">
+        <div class="field-group" style="margin-top:8px">
+          <input type="text" id="ridConfirm" placeholder="UNLOCK" data-i18n-placeholder="rid.typeUnlock"
+                 oninput="onRidConfirmInput()" autocomplete="off">
+        </div>
+        <button class="btn btn-primary btn-sm" id="btnRidUnlock" onclick="startRidUnlock()" disabled data-i18n="rid.unlockBtn">Unlock</button>
+      </div>
+      <div id="ridUnlockedUI" style="display:none">
+        <div class="rid-unlocked-msg" data-i18n="rid.unlockedMsg">
+          RID eFuse has been permanently unlocked. Broadcasting will start when the flight controller is connected.
+        </div>
+      </div>
+      <div class="resp-msg" id="respRid" style="margin-top:8px">&mdash;</div>
+    </div>
+
   </div>
   <div class="tab-pane" id="tab-ota">
     <div class="setting-group">
@@ -223,6 +247,19 @@
     <div class="overlay-actions">
       <button class="btn btn-ghost btn-sm" onclick="cancelOta()" data-i18n="ota.cancel">Cancel</button>
       <button class="btn btn-primary btn-sm" onclick="confirmOta()" data-i18n="ota.flash">Flash</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ridConfirmOverlay">
+  <div class="overlay-box">
+    <div class="overlay-title" data-i18n="rid.confirmTitle">Confirm RID Unlock</div>
+    <div class="overlay-body" data-i18n="rid.confirmBody">
+      This will permanently burn the RID unlock flag into eFuse. This operation CANNOT be undone. The device will become a legal drone broadcaster. Are you sure?
+    </div>
+    <div class="overlay-actions">
+      <button class="btn btn-ghost btn-sm" onclick="cancelRidUnlock()" data-i18n="rid.cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmRidUnlock()" data-i18n="rid.confirm">Confirm Unlock</button>
     </div>
   </div>
 </div>

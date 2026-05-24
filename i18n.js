@@ -179,6 +179,22 @@ const I18N = (() => {
       'log.viaHttp':  'files via HTTP',
       'log.ver':      'FW: v',
       'files.found':  '%d file(s) found',
+
+      // ── RID ──
+      'rid.title':          'Remote ID (RID)',
+      'rid.disclaimer':     'RID broadcasting uses eFuse OTP (one-time programmable) memory. Once unlocked, this operation is physically irreversible. Only proceed if required by local regulations and you accept full legal responsibility for operating a drone broadcaster. Unlocking prevents returns and affects the merchant\'s ability to resell.',
+      'rid.status':         'Status:',
+      'rid.locked':         'Locked',
+      'rid.unlocked':       'Unlocked',
+      'rid.typeUnlock':     'Type UNLOCK to confirm',
+      'rid.unlockBtn':      'Unlock',
+      'rid.unlockedMsg':    'RID eFuse permanently unlocked. Broadcasting starts when flight controller connects.',
+      'rid.unlockFailed':   'Unlock failed — eFuse write error',
+      'rid.burning':        'Burning eFuse...',
+      'rid.confirmTitle':   'Confirm RID Unlock',
+      'rid.confirmBody':    'This permanently burns the RID unlock flag into eFuse. This operation CANNOT be undone. The device will become a legal drone broadcaster. Proceed?',
+      'rid.cancel':         'Cancel',
+      'rid.confirm':        'Confirm Unlock',
     },
 
     zh: {
@@ -356,6 +372,22 @@ const I18N = (() => {
       'log.viaHttp':  '个文件 (HTTP)',
       'log.ver':      '固件: v',
       'files.found':  '发现 %d 个文件',
+
+      // ── RID ──
+      'rid.title':          '远程识别 (RID)',
+      'rid.disclaimer':     '远程识别广播使用 eFuse OTP（一次性可编程）存储。一旦解锁，此操作物理不可逆。仅在当地法规要求远程识别且您承担操作无人机广播器的全部法律责任时，才应进行解锁。解锁后影响二次销售，不能享受 7 天无理由退货。',
+      'rid.status':         '状态：',
+      'rid.locked':         '已锁定',
+      'rid.unlocked':       '已解锁',
+      'rid.typeUnlock':     '输入 UNLOCK 以确认',
+      'rid.unlockBtn':      '解锁',
+      'rid.unlockedMsg':    'RID eFuse 已永久解锁。连接飞控后即开始广播。',
+      'rid.unlockFailed':   '解锁失败 — eFuse 写入错误',
+      'rid.burning':        '正在烧录 eFuse...',
+      'rid.confirmTitle':   '确认 RID 解锁',
+      'rid.confirmBody':    '这将永久性地将 RID 解锁标志烧录到 eFuse 中。此操作不可撤销。设备将成为合法的无人机广播器。是否继续？',
+      'rid.cancel':         '取消',
+      'rid.confirm':        '确认解锁',
     }
   }
 
