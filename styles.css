@@ -278,6 +278,12 @@ body {
   padding-left: 8px;
 }
 
+.file-row.selected {
+  background: rgba(245,166,35,0.06);
+  border-left: 2px solid var(--amber);
+  padding-left: 8px;
+}
+
 .file-check {
   appearance: none; -webkit-appearance: none;
   width: 16px; height: 16px;
@@ -469,7 +475,7 @@ body {
   position: absolute;
   top: 0; left: 0;
   height: 100%;
-  background: rgba(245,166,35,0.12);
+  background: rgba(245,166,35,0.22);
   border-radius: 2px;
   width: 0%;
   pointer-events: none;
@@ -501,6 +507,16 @@ body {
   opacity: 0;
 }
 .p-row-prog:hover .p-prog-thumb { opacity: 1; }
+
+/* Seeking / buffering pulse */
+.p-prog-fill.seeking,
+.p-prog-fill.waiting {
+  animation: seek-pulse 0.7s ease-in-out infinite alternate;
+}
+@keyframes seek-pulse {
+  from { opacity: 0.35; }
+  to   { opacity: 0.75; }
+}
 
 /* ── Controls ── */
 

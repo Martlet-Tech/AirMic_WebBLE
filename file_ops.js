@@ -116,6 +116,16 @@ async function fetchFileList() {
           // Playing file was deleted or disappeared
           playerStop()
         }
+      } else if (s_selectedFile) {
+        // Restore selected state after re-render
+        const selRow = container.querySelector(`[data-filename="${CSS.escape(s_selectedFile)}"]`)
+        if (selRow) {
+          selRow.classList.add('selected')
+          s_selectedRow = selRow
+        } else {
+          clearSelection()
+          updatePlayerUI()
+        }
       }
       // fileCount removed
     } else {
@@ -237,6 +247,8 @@ function deleteAllFiles(btnEl) {
 let s_player = null
 let s_playingFile = null
 let s_playingRow = null
+let s_selectedFile = null
+let s_selectedRow = null
 let s_audioCtx = null
 let s_analyser = null
 let s_animFrame = null
@@ -253,6 +265,11 @@ function clearPlayerState() {
     const btn = s_playingRow.querySelector('.action-btn.play')
     if (btn) { btn.textContent = '▶'; btn.classList.remove('playing') }
     s_playingRow.classList.remove('playing')
+    // Keep selected highlight if this file is selected
+    if (s_selectedFile && s_selectedFile === s_playingFile) {
+      s_playingRow.classList.add('selected')
+      s_selectedRow = s_playingRow
+    }
     s_playingRow = null
   }
   s_playingFile = null
@@ -376,15 +393,30 @@ function updatePlayerUI() {
   if (!bar || !fill || !timeEl || !playBtn) return
 
   const idle = !s_player || !s_playingFile
+  const hasSelection = !!(s_selectedFile && idle)
 
-  bar.classList.toggle('idle', idle)
+  bar.classList.toggle('idle', idle && !hasSelection)
   fill.style.opacity = ''
-  thumb.style.left = idle ? '-999px' : thumb.style.left
+  thumb.style.left = (idle && !hasSelection) ? '-999px' : thumb.style.left
 
   if (idle) {
+    if (hasSelection) {
+      document.getElementById('pFilename').textContent = s_selectedFile
+      timeEl.textContent = '00:00 / --:--'
+      fill.style.width = '0%'
+      const loaded = document.getElementById('pLoaded')
+      if (loaded) { loaded.style.width = '0%'; loaded.style.left = '0%' }
+      playBtn.textContent = '▶'
+      playBtn.classList.remove('idle')
+      if (vuCanvas) vuCanvas.style.opacity = '0.12'
+      stopVUMeter()
+      return
+    }
     document.getElementById('pFilename').textContent = I18N.t('player.noFile')
     timeEl.textContent = '--:-- / --:--'
     fill.style.width = '0%'
+    const loaded = document.getElementById('pLoaded')
+    if (loaded) { loaded.style.width = '0%'; loaded.style.left = '0%' }
     playBtn.textContent = '▶'
     playBtn.classList.add('idle')
     if (vuCanvas) vuCanvas.style.opacity = '0.12'
@@ -425,12 +457,21 @@ function playerStop() {
     s_player = null
   }
   clearPlayerState()
+  const loaded = document.getElementById('pLoaded')
+  if (loaded) { loaded.style.width = '0%'; loaded.style.left = '0%' }
   updatePlayerUI()
   log(I18N.t('player.stopped'), '')
 }
 
 function playerTogglePause() {
-  if (!s_player || !s_playingFile) return
+  if (!s_player || !s_playingFile) {
+    if (s_selectedFile) playFile(s_selectedFile)
+    return
+  }
+  if (s_selectedFile && s_selectedFile !== s_playingFile) {
+    playFile(s_selectedFile)
+    return
+  }
   if (s_player.paused) {
     s_player.play().catch(() => playerStop())
     resumeVUMeter()
@@ -443,14 +484,14 @@ function playerTogglePause() {
 
 function playerSeek(e) {
   if (!s_player) return
+  const dur = s_player.duration
+  if (!isFinite(dur) || dur <= 0) return
   const wrap = document.getElementById('pProgWrap')
   if (!wrap) return
   const rect = wrap.getBoundingClientRect()
   const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left
   const pct = Math.max(0, Math.min(1, x / rect.width))
-  if (!isNaN(s_player.duration)) {
-    s_player.currentTime = pct * s_player.duration
-  }
+  s_player.currentTime = pct * dur
 }
 
 function playerSetVolume(v) {
@@ -461,6 +502,30 @@ function getFileNames() {
   return Array.from(document.querySelectorAll('#fileList .file-row'))
     .map(r => r.dataset.filename)
     .filter(Boolean)
+}
+
+function selectFile(filename) {
+  // Row click on currently playing file → no-op
+  if (s_playingFile === filename && s_selectedFile === filename) return
+  // Row click on currently selected file → play
+  if (s_selectedFile === filename) { playFile(filename); return }
+
+  clearSelection()
+  s_selectedFile = filename
+  const row = document.querySelector(`[data-filename="${CSS.escape(filename)}"]`)
+  if (row) {
+    row.classList.add('selected')
+    s_selectedRow = row
+  }
+  updatePlayerUI()
+}
+
+function clearSelection() {
+  if (s_selectedRow) {
+    s_selectedRow.classList.remove('selected')
+    s_selectedRow = null
+  }
+  s_selectedFile = null
 }
 
 function playerPrev() {
@@ -486,6 +551,10 @@ function playFile(filename) {
   // Different file → stop current, start new
   playerStop()
 
+  // Clear old selection highlight from other rows
+  if (s_selectedRow) { s_selectedRow.classList.remove('selected'); s_selectedRow = null }
+  s_selectedFile = null
+
   const row = document.querySelector(`[data-filename="${CSS.escape(filename)}"]`)
   if (!row) return
 
@@ -495,6 +564,8 @@ function playFile(filename) {
 
   s_playingFile = filename
   s_playingRow = row
+  s_selectedFile = filename
+  s_selectedRow = row
 
   const url = `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
   const audio = new Audio()
@@ -509,9 +580,28 @@ function playFile(filename) {
   audio.addEventListener('progress', () => {
     const loaded = document.getElementById('pLoaded')
     if (!loaded || !audio.buffered || !audio.buffered.length) return
-    const end = audio.buffered.end(audio.buffered.length - 1)
     const dur = audio.duration
-    loaded.style.width = (isFinite(dur) && dur > 0 ? (end / dur) * 100 : 0) + '%'
+    if (!isFinite(dur) || dur <= 0) {
+      loaded.style.left = '0%'
+      loaded.style.width = '0%'
+      return
+    }
+    const start = audio.buffered.start(0)
+    const end = audio.buffered.end(audio.buffered.length - 1)
+    loaded.style.left = (start / dur * 100) + '%'
+    loaded.style.width = ((end - start) / dur * 100) + '%'
+  })
+  audio.addEventListener('seeking', () => {
+    document.getElementById('pFill')?.classList.add('seeking')
+  })
+  audio.addEventListener('seeked', () => {
+    document.getElementById('pFill')?.classList.remove('seeking')
+  })
+  audio.addEventListener('waiting', () => {
+    document.getElementById('pFill')?.classList.add('waiting')
+  })
+  audio.addEventListener('canplay', () => {
+    document.getElementById('pFill')?.classList.remove('waiting')
   })
   audio.addEventListener('ended', () => {
     log(I18N.t('player.playbackEnded') + ' ' + filename, 'ok')
@@ -561,6 +651,16 @@ document.getElementById('pProgWrap')?.addEventListener('touchstart', (e) => {
   playerSeek(e)
   e.preventDefault()
 }, { passive: false })
+
+// ── File row click to select ──
+
+document.getElementById('fileList')?.addEventListener('click', (e) => {
+  if (e.target.closest('button, input, .action-btn, .file-check, .progress-bar')) return
+  const row = e.target.closest('.file-row')
+  if (!row) return
+  const filename = row.dataset.filename
+  if (filename) selectFile(filename)
+})
 
 // ── Download with Progress ──
 
