@@ -177,6 +177,7 @@ const I18N = (() => {
       'log.sendErr':  'send err',
       'log.fetched':  'Fetched',
       'log.viaHttp':  'files via HTTP',
+      'log.ver':      'FW: v',
       'files.found':  '%d file(s) found',
     },
 
@@ -353,6 +354,7 @@ const I18N = (() => {
       'log.sendErr':  '发送错误',
       'log.fetched':  '已获取',
       'log.viaHttp':  '个文件 (HTTP)',
+      'log.ver':      '固件: v',
       'files.found':  '发现 %d 个文件',
     }
   }

@@ -48,6 +48,10 @@ async function cmdGetFileList() {
   await send(new Uint8Array([0x06, 0x00]).buffer)
 }
 
+async function cmdGetVersion() {
+  await send(new Uint8Array([0x04, 0x00]).buffer)
+}
+
 async function cmdGetWifiStatus() {
   await send(new Uint8Array([0x09, 0x00]).buffer)
 }
@@ -211,6 +215,13 @@ function onNotify(e) {
   if (cmd === 0x01)  setResp('respSync', ok ? I18N.t('time.synced') : I18N.t('time.error'), ok)
   if (cmd === 0x02)  setResp('respSync', ok ? I18N.t('enc.set') : I18N.t('time.error'), ok)
   if (cmd === 0x03)  setResp('respSync', ok ? I18N.t('enc.chSet') : I18N.t('time.error'), ok)
+
+  if (cmd === 0x04 && ok && d.length >= 13) {
+    // payload[8..10] = MAJOR / MINOR / PATCH
+    const ver = d[10] + '.' + d[11] + '.' + d[12]
+    log(I18N.t('log.ver') + ' ' + ver, 'ok')
+    document.getElementById('aboutVer').textContent = ver
+  }
 
   if (cmd === 0x05) {
     setResp('respWifiEdit', ok ? I18N.t('wifi.connecting') : I18N.t('time.error'), ok)

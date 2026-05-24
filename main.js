@@ -137,6 +137,7 @@ function setUI(on) {
     }
     setTimeout(cmdConfigList, 2000)
     setTimeout(cmdTimeSync, 2500)  // 自动同步设备时间
+    setTimeout(cmdGetVersion, 3000)  // 读取固件版本
   } else {
     wifiReset()
   }
