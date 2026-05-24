@@ -62,8 +62,6 @@ const I18N = (() => {
       'settings.stereo':      'Stereo',
       'settings.agcMode':     'AGC Mode',
       'settings.apply':       'Apply',
-      'settings.deviceStatus':'Device Status',
-      'settings.queryStatus': 'Query Status',
       'settings.language':    'Language / 语言',
 
       // ── OTA Tab ──
@@ -88,6 +86,7 @@ const I18N = (() => {
       'about.bleStatus':  'BLE Status',
       'about.wifiIp':     'WiFi IP',
       'about.version':    'Version',
+      'about.deviceTime': 'Device Time',
       'about.help':       'Help',
       'about.helpText1':  'Connect via BLE to configure your AirMic module. Use the Files tab to browse, play, download, rename, or delete recordings from the SD card.',
       'about.helpText2':  'WiFi is required for file transfers and OTA updates.',
@@ -124,11 +123,6 @@ const I18N = (() => {
       'notify.renameFail':     'Rename failed',
       'notify.noWifi':         'WiFi not connected',
       'notify.recBlocked':    'Recording disabled while connected',
-
-      // ── Status ──
-      'stat.rec':   'REC',
-      'stat.enc':   'ENC',
-      'stat.time':  'TIME',
 
       // ── WiFi ──
       'wifi.ssidRequired':     'SSID is required',
@@ -244,8 +238,6 @@ const I18N = (() => {
       'settings.stereo':      '立体声',
       'settings.agcMode':     'AGC 模式',
       'settings.apply':       '应用',
-      'settings.deviceStatus':'设备状态',
-      'settings.queryStatus': '查询状态',
       'settings.language':    '语言 / Language',
 
       // ── OTA Tab ──
@@ -270,6 +262,7 @@ const I18N = (() => {
       'about.bleStatus':  'BLE 状态',
       'about.wifiIp':     'WiFi IP',
       'about.version':    '版本',
+      'about.deviceTime': '设备时间',
       'about.help':       '帮助',
       'about.helpText1':  '通过 BLE 连接配置 AirMic 模块。在文件标签页中浏览、播放、下载、重命名或删除 SD 卡中的录音。',
       'about.helpText2':  '文件传输和 OTA 升级需要 WiFi 连接。',
@@ -306,11 +299,6 @@ const I18N = (() => {
       'notify.renameFail':     '重命名失败',
       'notify.noWifi':         'WiFi 未连接',
       'notify.recBlocked':    '连接中已禁用录音',
-
-      // ── Status ──
-      'stat.rec':   '录音',
-      'stat.enc':   '编码',
-      'stat.time':  '时间',
 
       // ── WiFi ──
       'wifi.ssidRequired':     '请输入 SSID',
@@ -370,7 +358,7 @@ const I18N = (() => {
   }
 
   // ── Resolve language ──
-  const lang = (() => {
+  let lang = (() => {
     const stored = localStorage.getItem('airmic_lang')
     if (stored === 'en' || stored === 'zh') return stored
     return navigator.language.startsWith('zh') ? 'zh' : 'en'
@@ -393,6 +381,9 @@ const I18N = (() => {
     })
     // Update html lang attribute
     document.documentElement.lang = lang
+    // Sync language selector
+    const sel = document.getElementById('selLang')
+    if (sel) sel.value = lang
   }
 
   return {
@@ -401,7 +392,10 @@ const I18N = (() => {
     render,
     setLang: (l) => {
       localStorage.setItem('airmic_lang', l)
-      location.reload()
+      lang = l
+      render()
+      const sel = document.getElementById('selLang')
+      if (sel) sel.value = l
     }
   }
 })()

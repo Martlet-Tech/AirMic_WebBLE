@@ -40,10 +40,6 @@ async function cmdChannels() {
   await send(b.buffer)
 }
 
-async function cmdGetStatus() {
-  await send(new Uint8Array([0x04, 0x00]).buffer)
-}
-
 async function cmdGetFileList() {
   const container = document.getElementById('fileList')
   const empty = document.getElementById('fileEmpty')
@@ -215,13 +211,6 @@ function onNotify(e) {
   if (cmd === 0x01)  setResp('respSync', ok ? I18N.t('time.synced') : I18N.t('time.error'), ok)
   if (cmd === 0x02)  setResp('respSync', ok ? I18N.t('enc.set') : I18N.t('time.error'), ok)
   if (cmd === 0x03)  setResp('respSync', ok ? I18N.t('enc.chSet') : I18N.t('time.error'), ok)
-
-  if (cmd === 0x04 && ok) {
-    const ts = d[3] | (d[4] << 8) | (d[5] << 16) | (d[6] << 24)
-    const encNames = ['WAV','AAC','ALAC']
-    const enc = d[7] || 1
-    setResp('respStat', I18N.t('stat.rec') + '=' + d[2] + '  ' + I18N.t('stat.enc') + '=' + (encNames[enc] || '?') + '  ' + I18N.t('stat.time') + '=' + new Date(ts * 1000).toISOString(), true)
-  }
 
   if (cmd === 0x05) {
     setResp('respWifiEdit', ok ? I18N.t('wifi.connecting') : I18N.t('time.error'), ok)

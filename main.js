@@ -27,8 +27,8 @@ function toggleLog() {
 
 setInterval(() => {
   const n = new Date()
-  document.getElementById('clock').textContent = n.toTimeString().slice(0, 8)
-  document.getElementById('cdate').textContent = n.toISOString().slice(0, 10)
+  const el = document.getElementById('aboutClock')
+  if (el) el.textContent = n.toTimeString().slice(0, 8)
 }, 500)
 
 // ── Logger ──
@@ -93,7 +93,7 @@ function topBarConnecting(connecting) {
 }
 
 function onDisc() {
-  log(I18N.t('conn.disconnected'), 'err')
+  log(I18N.t('conn.disconnected'))
   setUI(false)
 }
 
@@ -110,7 +110,7 @@ function setUI(on) {
   deviceEl.textContent = on && device?.name ? device.name : ''
 
   // Enable/disable BLE-dependent buttons
-  const ids = ['btnSync', 'btnRate', 'btnCh', 'btnEnc', 'btnAgcMode', 'btnStat', 'btnWifi', 'btnFileList']
+  const ids = ['btnRate', 'btnCh', 'btnEnc', 'btnAgcMode', 'btnWifi', 'btnFileList']
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = !on })
 
   // Reset file panel on disconnect
@@ -136,6 +136,7 @@ function setUI(on) {
       showToast(I18N.t('wifi.autoConnecting'), 1500)
     }
     setTimeout(cmdConfigList, 2000)
+    setTimeout(cmdTimeSync, 2500)  // 自动同步设备时间
   } else {
     wifiReset()
   }

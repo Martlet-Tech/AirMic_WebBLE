@@ -99,14 +99,6 @@
     </div>
 
     <div class="setting-group">
-      <div class="setting-title" data-i18n="settings.timeSync">Time Sync</div>
-      <div class="clock-display" id="clock">--:--:--</div>
-      <div class="clock-date" id="cdate">---- -- --</div>
-      <button class="btn btn-secondary btn-sm" id="btnSync" onclick="cmdTimeSync()" disabled data-i18n="settings.syncTime">Sync Time</button>
-      <div class="resp-msg" id="respSync">&mdash;</div>
-    </div>
-
-    <div class="setting-group">
       <div class="setting-title" data-i18n="settings.audioConfig">Audio Config</div>
       <div class="field-row">
         <div class="field-group">
@@ -136,13 +128,6 @@
         </div>
       </div>
     </div>
-
-    <div class="setting-group">
-      <div class="setting-title" data-i18n="settings.deviceStatus">Device Status</div>
-      <button class="btn btn-secondary btn-sm" id="btnStat" onclick="cmdGetStatus()" disabled data-i18n="settings.queryStatus">Query Status</button>
-      <div class="resp-msg" id="respStat">&mdash;</div>
-    </div>
-
     <div class="setting-group">
       <div class="setting-title" data-i18n="settings.language">Language / 语言</div>
       <select id="selLang" onchange="I18N.setLang(this.value)" style="width:auto">
@@ -182,6 +167,7 @@
         <div class="about-row"><span class="about-label" data-i18n="about.bleStatus">BLE Status</span><span id="aboutBle">--</span></div>
         <div class="about-row"><span class="about-label" data-i18n="about.wifiIp">WiFi IP</span><span id="aboutIp">--</span></div>
         <div class="about-row"><span class="about-label" data-i18n="about.version">Version</span><span id="aboutVer">rev0.2</span></div>
+        <div class="about-row"><span class="about-label" data-i18n="about.deviceTime">Device Time</span><span id="aboutClock">--:--:--</span></div>
       </div>
     </div>
     <div class="setting-group">
@@ -256,6 +242,5 @@
 <script src="protocol.js"></script>
 <script src="file_ops.js"></script>
 <script src="main.js"></script>
-<script>document.getElementById('selLang').value = I18N.lang</script>
 </body>
 </html>
