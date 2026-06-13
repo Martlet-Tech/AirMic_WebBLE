@@ -164,6 +164,10 @@
   <div class="tab-pane" id="tab-ota">
     <div class="setting-group">
       <div class="setting-title" data-i18n="ota.firmwareUpgrade">Firmware Upgrade</div>
+      <div id="otaUpdateBanner" style="display:none;margin-bottom:12px;padding:10px 14px;border-radius:8px;background:var(--accent-bg);border:1px solid var(--accent);font-size:13px">
+        <div style="font-weight:600;margin-bottom:4px">📥 <span data-i18n="ota.updateAvailable">Update Available</span></div>
+        <div id="otaUpdateText"></div>
+      </div>
       <div class="ota-desc" data-i18n="ota.desc">Select a .bin firmware file to upload and flash via WiFi. The device will reboot after completion.</div>
 
       <div class="field-group">

@@ -139,6 +139,8 @@ function setUI(on) {
     setTimeout(cmdTimeSync, 2500)  // 自动同步设备时间
     setTimeout(cmdGetVersion, 3000)  // 读取固件版本
     setTimeout(cmdGetRidStatus, 3500)  // 读取 RID 解锁状态
+    // 连接后 5 秒检查 OTA 更新（等待版本号返回）
+    setTimeout(checkFirmwareUpdate, 5000)
   } else {
     wifiReset()
   }
@@ -229,6 +231,44 @@ function setResp(id, msg, ok) {
   if (!el) return
   el.innerHTML = msg
   el.className = 'resp-msg' + (ok !== undefined ? (ok ? ' ok' : ' err') : '')
+}
+
+// ── Firmware Update Check ──
+
+async function checkFirmwareUpdate() {
+  const verEl = document.getElementById('aboutVer')
+  const currentVer = verEl?.textContent || ''
+  if (!currentVer || currentVer === 'rev0.2' || !/^\d/.test(currentVer)) return
+
+  try {
+    const res = await fetch('https://api.github.com/repos/Martlet-Tech/AirMic_WebBLE/releases/latest')
+    if (!res.ok) return
+    const release = await res.json()
+    const tag = release.tag_name || ''
+    const match = tag.match(/^fw-v?(\d+\.\d+\.\d+)$/i)
+    if (!match) return
+
+    const latestVer = match[1]
+    if (compareVersions(latestVer, currentVer) <= 0) return
+
+    const banner = document.getElementById('otaUpdateBanner')
+    const text = document.getElementById('otaUpdateText')
+    if (banner && text) {
+      text.innerHTML = `v${currentVer} → <strong>v${latestVer}</strong> &nbsp;`
+        + `<a href="${release.html_url}" target="_blank" style="color:var(--accent)">`
+        + 'Download &nbsp;↗</a>'
+      banner.style.display = ''
+    }
+  } catch (_) { /* 静默 */ }
+}
+
+function compareVersions(a, b) {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    if (pa[i] !== pb[i]) return pa[i] - pb[i]
+  }
+  return 0
 }
 
 // ── OTA ──
