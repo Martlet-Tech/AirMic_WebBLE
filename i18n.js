@@ -170,6 +170,8 @@ const I18N = (() => {
       'misc.otaReq':  'OTA requires WiFi connection',
       'misc.http':    'HTTP',
       'storage.used': 'Used',
+      'storage.warning80': 'SD card over 80% full — free up space soon',
+      'storage.warning90': 'SD card over 90% full! Please free up space immediately.',
 
       // ── Log ──
       'log.tx':       'TX →',
@@ -363,6 +365,8 @@ const I18N = (() => {
       'misc.otaReq':  'OTA 需要 WiFi 连接',
       'misc.http':    'HTTP',
       'storage.used': '已用',
+      'storage.warning80': 'SD 卡用量超过 80% — 请及时清理',
+      'storage.warning90': 'SD 卡用量超过 90%！请立即清理空间。',
 
       // ── Log ──
       'log.tx':       'TX →',

@@ -18,6 +18,30 @@ function escapeHtml(s) {
 
 let s_toastTimer = null
 
+// ── Storage Warning ──
+
+let s_storageLocked = false
+
+function showStorageWarning(usedPct) {
+  if (s_storageLocked) return
+  if (usedPct >= 90) {
+    s_storageLocked = true
+    const body = I18N.t('storage.warning90') + ' (' + usedPct.toFixed(0) + '%)'
+    document.getElementById('storageWarningBody').textContent = body
+    document.getElementById('storageWarning').classList.add('open')
+    setTimeout(dismissStorageWarning, 3000)
+  } else if (usedPct >= 80) {
+    showToast(I18N.t('storage.warning80') + ' (' + usedPct.toFixed(0) + '%)', 3000)
+  }
+}
+
+function dismissStorageWarning() {
+  s_storageLocked = false
+  document.getElementById('storageWarning')?.classList.remove('open')
+}
+
+// ── Toast ──
+
 function showToast(msg, duration) {
   const el = document.getElementById('toast')
   if (!el) return
@@ -71,10 +95,12 @@ async function fetchFileList() {
 
     // Update storage info bar — show used / total
     const storageEl = document.getElementById('storageInfo')
-    if (storageEl && data.free_bytes !== undefined) {
+    if (storageEl && data.free_bytes !== undefined && data.total_bytes > 0) {
       const used = formatFileSize(data.total_bytes - data.free_bytes)
       const total = formatFileSize(data.total_bytes)
       storageEl.textContent = I18N.t('storage.used') + ' ' + used + ' / ' + total
+      const usedPct = (1 - data.free_bytes / data.total_bytes) * 100
+      showStorageWarning(usedPct)
     }
 
     if (data.files && data.files.length > 0) {
