@@ -202,6 +202,29 @@ function confirmRidUnlock() {
   cmdRidUnlock(input.value)
 }
 
+// ── GPS ──
+
+function updateGpsDisplay(gps) {
+  const el = document.getElementById('gpsInfo')
+  if (!el) return
+  if (!gps || !gps.fix) {
+    el.innerHTML = '<span class="gps-no-fix">No GPS fix</span>'
+    return
+  }
+  const latDir = gps.lat >= 0 ? 'N' : 'S'
+  const lonDir = gps.lon >= 0 ? 'E' : 'W'
+  const latDeg = Math.abs(gps.lat) / 1e7
+  const lonDeg = Math.abs(gps.lon) / 1e7
+  const speedMs = (gps.speed / 100).toFixed(1)
+  el.innerHTML =
+    `<div class="gps-row"><span class="gps-label">Lat:</span><span>${latDeg.toFixed(6)}° ${latDir}</span></div>` +
+    `<div class="gps-row"><span class="gps-label">Lon:</span><span>${lonDeg.toFixed(6)}° ${lonDir}</span></div>` +
+    `<div class="gps-row"><span class="gps-label">Alt:</span><span>${gps.alt} m</span></div>` +
+    `<div class="gps-row"><span class="gps-label">Speed:</span><span>${speedMs} m/s</span></div>` +
+    `<div class="gps-row"><span class="gps-label">Heading:</span><span>${(gps.heading / 10).toFixed(0)}°</span></div>` +
+    `<div class="gps-row"><span class="gps-label">Sats:</span><span>${gps.numSat}</span></div>`
+}
+
 function autoConnectWifi() {
   const raw = localStorage.getItem('airmic_wifi_settings')
   if (!raw) return false

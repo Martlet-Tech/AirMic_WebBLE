@@ -158,6 +158,13 @@
         </div>
       </div>
       <div class="resp-msg" id="respRid" style="margin-top:8px">&mdash;</div>
+      <hr style="margin:12px 0;border-color:var(--border)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px" data-i18n="rid.gpsTitle">GPS Position</div>
+      <div id="gpsInfo" style="font-size:12px;line-height:1.6;margin-bottom:8px;color:var(--text-secondary)">
+        <span data-i18n="rid.gpsUnknown">Press "Get GPS" to query</span>
+      </div>
+      <button class="btn btn-sm" onclick="cmdGetGps()" data-i18n="rid.getGpsBtn">Get GPS</button>
+      <div class="resp-msg" id="respGps" style="margin-top:6px;font-size:12px">&mdash;</div>
     </div>
 
   </div>

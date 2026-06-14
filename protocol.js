@@ -170,6 +170,12 @@ async function cmdWifiSetup() {
   _sendWifiSetup(ssid, password)
 }
 
+// ── GPS ──
+
+async function cmdGetGps() {
+  await send(new Uint8Array([0x0F, 0x00]).buffer)
+}
+
 // ── RID OTP ──
 
 async function cmdGetRidStatus() {
@@ -347,5 +353,18 @@ function onNotify(e) {
 
   if (cmd === 0x0E && ok && d.length >= 3) {
     updateRidUI(d[2] !== 0)
+  }
+
+  if (cmd === 0x0F && ok && d.length >= 18) {
+    const dv = new DataView(d.buffer, 2) // skip cmd+status
+    updateGpsDisplay({
+      lat: dv.getInt32(0, true),
+      lon: dv.getInt32(4, true),
+      alt: dv.getInt16(8, true),
+      speed: dv.getUint16(10, true),
+      heading: dv.getUint16(12, true),
+      fix: dv.getUint8(14),
+      numSat: dv.getUint8(15),
+    })
   }
 }

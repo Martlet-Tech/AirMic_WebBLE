@@ -1079,6 +1079,13 @@ select option { background: var(--bg-primary); }
   line-height: 1.6;
 }
 
+/* ── GPS Display ── */
+
+#gpsInfo { font-size:0.55rem; line-height:1.7; margin-bottom:8px; color:var(--text-secondary); }
+.gps-row  { display:flex; gap:6px; }
+.gps-label { display:inline-block; width:3.2rem; color:var(--text-tertiary); }
+.gps-no-fix { color:var(--red); font-style:italic; }
+
 /* ── Overlay ── */
 
 .overlay-actions {

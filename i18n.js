@@ -197,6 +197,10 @@ const I18N = (() => {
       'rid.confirmBody':    'This permanently burns the RID unlock flag into eFuse. This operation CANNOT be undone. The device will become a legal drone broadcaster. Proceed?',
       'rid.cancel':         'Cancel',
       'rid.confirm':        'Confirm Unlock',
+      // ── GPS ──
+      'rid.gpsTitle':       'GPS Position',
+      'rid.gpsUnknown':     'Press "Get GPS" to query',
+      'rid.getGpsBtn':      'Get GPS',
     },
 
     zh: {
@@ -392,6 +396,10 @@ const I18N = (() => {
       'rid.confirmBody':    '这将永久性地将 RID 解锁标志烧录到 eFuse 中。此操作不可撤销。设备将成为合法的无人机广播器。是否继续？',
       'rid.cancel':         '取消',
       'rid.confirm':        '确认解锁',
+      // ── GPS ──
+      'rid.gpsTitle':       'GPS 位置',
+      'rid.gpsUnknown':     '点击"获取 GPS"查询',
+      'rid.getGpsBtn':      '获取 GPS',
     }
   }
 
