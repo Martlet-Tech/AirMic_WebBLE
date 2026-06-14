@@ -355,16 +355,20 @@ function onNotify(e) {
     updateRidUI(d[2] !== 0)
   }
 
-  if (cmd === 0x0F && ok && d.length >= 18) {
-    const dv = new DataView(d.buffer, 2) // skip cmd+status
-    updateGpsDisplay({
-      lat: dv.getInt32(0, true),
-      lon: dv.getInt32(4, true),
-      alt: dv.getInt16(8, true),
-      speed: dv.getUint16(10, true),
-      heading: dv.getUint16(12, true),
-      fix: dv.getUint8(14),
-      numSat: dv.getUint8(15),
-    })
+  if (cmd === 0x0F && d.length >= 2) {
+    if (ok && d.length >= 18) {
+      const dv = new DataView(d.buffer, 2) // skip cmd+status
+      updateGpsDisplay({
+        lat: dv.getInt32(0, true),
+        lon: dv.getInt32(4, true),
+        alt: dv.getInt16(8, true),
+        speed: dv.getUint16(10, true),
+        heading: dv.getUint16(12, true),
+        fix: dv.getUint8(14),
+        numSat: dv.getUint8(15),
+      })
+    } else {
+      updateGpsDisplay(null) // show error
+    }
   }
 }

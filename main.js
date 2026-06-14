@@ -207,8 +207,12 @@ function confirmRidUnlock() {
 function updateGpsDisplay(gps) {
   const el = document.getElementById('gpsInfo')
   if (!el) return
-  if (!gps || !gps.fix) {
-    el.innerHTML = '<span class="gps-no-fix">No GPS fix</span>'
+  if (gps === null) {
+    el.innerHTML = '<span class="gps-no-fix">Flight controller not responding</span>'
+    return
+  }
+  if (!gps.fix) {
+    el.innerHTML = '<span class="gps-no-fix">No GPS fix (' + gps.numSat + ' sats)</span>'
     return
   }
   const latDir = gps.lat >= 0 ? 'N' : 'S'
