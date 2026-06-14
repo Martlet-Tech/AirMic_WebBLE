@@ -474,6 +474,8 @@ function updatePlayerUI() {
   playBtn.textContent = s_player.paused ? '▶' : '⏸'
 }
 
+let s_blobUrl = null
+
 function playerStop() {
   stopVUMeter()
   if (s_player) {
@@ -482,6 +484,7 @@ function playerStop() {
     s_player.load()
     s_player = null
   }
+  if (s_blobUrl) { URL.revokeObjectURL(s_blobUrl); s_blobUrl = null }
   clearPlayerState()
   const loaded = document.getElementById('pLoaded')
   if (loaded) { loaded.style.width = '0%'; loaded.style.left = '0%' }
@@ -568,7 +571,7 @@ function playerNext() {
   if (idx < names.length - 1) playFile(names[idx + 1])
 }
 
-function playFile(filename) {
+async function playFile(filename) {
   if (!window.airmicWifiIp) { setResp('respFileList', I18N.t('files.noWifi'), false); return }
 
   // Same file → stop (row button shows ⏹ = stop, not pause toggle)
@@ -593,7 +596,31 @@ function playFile(filename) {
   s_selectedFile = filename
   s_selectedRow = row
 
-  const url = `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
+  let u = null
+  // AAC needs browser-side ADTS→M4A conversion (no server-side chunked streaming)
+  if (filename.toLowerCase().endsWith('.aac')) {
+    const overlay = document.getElementById('aacLoading')
+    if (overlay) overlay.style.display = 'flex'
+    try {
+      const resp = await fetch(`http://${window.airmicWifiIp}/dl?${encodeURIComponent(filename)}`)
+      const buf = await resp.arrayBuffer()
+      console.log('AAC fetch: ' + buf.byteLength + ' bytes')
+      const wav = await aacToWav(buf)
+      if (overlay) overlay.style.display = 'none'
+      console.log('WAV blob: ' + wav.byteLength + ' bytes, ' +
+        new DataView(wav).getUint32(24, true) + 'Hz')
+      window.__lastWav = wav
+      u = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }))
+      s_blobUrl = u
+    } catch (e) {
+      if (overlay) overlay.style.display = 'none'
+      console.error('AAC convert error:', e)
+      log(I18N.t('player.playFailed') + ': ' + filename, 'err')
+      playerStop()
+      return
+    }
+  }
+  const url = u || `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
   const audio = new Audio()
   audio.crossOrigin = 'anonymous'
   audio.src = url
@@ -633,10 +660,11 @@ function playFile(filename) {
     log(I18N.t('player.playbackEnded') + ' ' + filename, 'ok')
     playerStop()
   })
-  audio.addEventListener('error', () => {
-    // Guard: this audio element was already replaced by a new playFile() call
+  audio.addEventListener('error', (e) => {
     if (s_player !== audio) return
-    log(I18N.t('player.playbackError') + ' ' + filename, 'err')
+    const ae = audio.error
+    console.error('Audio error:', ae ? { code: ae.code, message: ae.message } : e)
+    log(I18N.t('player.playbackError') + ' ' + filename + ' (code=' + (ae ? ae.code : '?') + ')', 'err')
     setResp('respFileList', I18N.t('player.playFailed'), false)
     playerStop()
   })
@@ -805,4 +833,14 @@ function handleFileNotify(cmd, ok, d) {
     document.querySelectorAll('.file-row[data-renaming]').forEach(el => delete el.dataset.renaming)
     return
   }
+}
+
+// Debug: download last converted M4A
+window.downloadM4a = function() {
+  const b = window.__lastM4a
+  if (!b) { console.warn('no m4a to download'); return }
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([b], {type:'audio/mp4'}))
+  a.download = 'debug.m4a'
+  a.click()
 }

@@ -102,6 +102,7 @@ const I18N = (() => {
       'player.playbackError':  'Playback error:',
       'player.playFailed':     'Play failed',
       'player.playing':        'Playing:',
+      'player.converting':     'Converting audio…',
 
       // ── File operations ──
       'notify.deleting':       'Deleting:',
@@ -301,6 +302,7 @@ const I18N = (() => {
       'player.playbackError':  '播放错误：',
       'player.playFailed':     '播放失败',
       'player.playing':        '正在播放：',
+      'player.converting':     '正在转码…',
 
       // ── File operations ──
       'notify.deleting':       '正在删除：',

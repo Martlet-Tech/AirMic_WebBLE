@@ -1115,3 +1115,5 @@ select option { background: var(--bg-primary); }
   .field-row { flex-direction: column; gap: 8px; }
   .field-row .field-group { margin-bottom: 0; }
 }
+
+@keyframes spin { to { transform: rotate(360deg) } }
