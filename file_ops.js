@@ -601,7 +601,7 @@ async function playFile(filename) {
   try { decCtx = new (window.AudioContext || window.webkitAudioContext)() } catch(e) {}
 
   let u = null
-  // AAC: decode to WAV via Web Audio API (fallback to download if unavailable)
+  // AAC: try direct streaming first (/play endpoint now has no Content-Length conflict)
   if (filename.toLowerCase().endsWith('.aac')) {
     const overlay = document.getElementById('aacLoading')
     if (overlay) overlay.style.display = 'flex'
@@ -611,26 +611,20 @@ async function playFile(filename) {
       console.log('AAC fetch: ' + buf.byteLength + ' bytes')
       if (!decCtx) throw new Error('AudioContext not available')
       if (decCtx.state === 'suspended') await decCtx.resume()
-      const audioBuf = await decCtx.decodeAudioData(buf)
+      const audioBuf = await decCtx.decodeAudioData(buf.slice(0))
       const wav = audioBufToWav(audioBuf)
       if (overlay) overlay.style.display = 'none'
-      console.log('WAV blob: ' + wav.byteLength + ' bytes, ' +
-        new DataView(wav).getUint32(24, true) + 'Hz')
+      console.log('WAV: ' + wav.byteLength + ' bytes')
       window.__lastWav = wav
       u = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }))
       s_blobUrl = u
     } catch (e) {
       if (overlay) overlay.style.display = 'none'
-      console.error('AAC decode fallback:', e.message)
-      // Browser can't decode AAC → download raw file
-      log(I18N.t('player.aacFallback') + ' ' + filename, 'warn')
-      const a = document.createElement('a')
-      a.href = `http://${window.airmicWifiIp}/dl?${encodeURIComponent(filename)}`
-      a.download = filename
-      a.click()
-      playerStop()
+      console.warn('AAC decode failed, trying direct play:', e.message)
+      // Fallback: stream directly via /play (no Content-Length conflict after fix)
+      // If browser supports AAC ADTS streaming, this works without conversion
+      u = `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
       if (decCtx) decCtx.close()
-      return
     }
   }
   const url = u || `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
