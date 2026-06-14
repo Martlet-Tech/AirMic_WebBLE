@@ -93,14 +93,11 @@ async function fetchFileList() {
     const container = document.getElementById('fileList')
     container.innerHTML = ''
 
-    // Update storage info bar — show used / total
-    const storageEl = document.getElementById('storageInfo')
-    if (storageEl && data.free_bytes !== undefined && data.total_bytes > 0) {
+    // Update storage info — show used / total in bottom bar
+    if (data.free_bytes !== undefined && data.total_bytes > 0) {
       const used = formatFileSize(data.total_bytes - data.free_bytes)
       const total = formatFileSize(data.total_bytes)
       const storageText = I18N.t('storage.used') + ' ' + used + ' / ' + total
-      storageEl.textContent = storageText
-      // Also update respFileList if it has our combined format
       const rfl = document.getElementById('respFileList')
       if (rfl && rfl.style.display === 'flex') {
         const msgSpan = rfl.querySelector('span:first-child')
