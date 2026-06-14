@@ -103,6 +103,7 @@ const I18N = (() => {
       'player.playFailed':     'Play failed',
       'player.playing':        'Playing:',
       'player.converting':     'Converting audio…',
+      'player.aacFallback':    'Browser cannot play AAC. Downloading file —',
 
       // ── File operations ──
       'notify.deleting':       'Deleting:',
@@ -303,6 +304,7 @@ const I18N = (() => {
       'player.playFailed':     '播放失败',
       'player.playing':        '正在播放：',
       'player.converting':     '正在转码…',
+      'player.aacFallback':    '浏览器不支持 AAC 解码，正在下载原文件 —',
 
       // ── File operations ──
       'notify.deleting':       '正在删除：',

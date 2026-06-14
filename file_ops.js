@@ -601,7 +601,7 @@ async function playFile(filename) {
   try { decCtx = new (window.AudioContext || window.webkitAudioContext)() } catch(e) {}
 
   let u = null
-  // AAC: decode to WAV via Web Audio API
+  // AAC: decode to WAV via Web Audio API (fallback to download if unavailable)
   if (filename.toLowerCase().endsWith('.aac')) {
     const overlay = document.getElementById('aacLoading')
     if (overlay) overlay.style.display = 'flex'
@@ -621,8 +621,13 @@ async function playFile(filename) {
       s_blobUrl = u
     } catch (e) {
       if (overlay) overlay.style.display = 'none'
-      console.error('AAC convert error:', e)
-      log(I18N.t('player.playFailed') + ': ' + filename + ' ' + (e.message||''), 'err')
+      console.error('AAC decode fallback:', e.message)
+      // Browser can't decode AAC → download raw file
+      log(I18N.t('player.aacFallback') + ' ' + filename, 'warn')
+      const a = document.createElement('a')
+      a.href = `http://${window.airmicWifiIp}/dl?${encodeURIComponent(filename)}`
+      a.download = filename
+      a.click()
       playerStop()
       if (decCtx) decCtx.close()
       return
