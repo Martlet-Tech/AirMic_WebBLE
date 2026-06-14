@@ -98,7 +98,14 @@ async function fetchFileList() {
     if (storageEl && data.free_bytes !== undefined && data.total_bytes > 0) {
       const used = formatFileSize(data.total_bytes - data.free_bytes)
       const total = formatFileSize(data.total_bytes)
-      storageEl.textContent = I18N.t('storage.used') + ' ' + used + ' / ' + total
+      const storageText = I18N.t('storage.used') + ' ' + used + ' / ' + total
+      storageEl.textContent = storageText
+      // Also update respFileList if it has our combined format
+      const rfl = document.getElementById('respFileList')
+      if (rfl && rfl.style.display === 'flex') {
+        const msgSpan = rfl.querySelector('span:first-child')
+        if (msgSpan) rfl.innerHTML = '<span>' + msgSpan.textContent + '</span><span style="color:#8892a0;white-space:nowrap">' + storageText + '</span>'
+      }
       const usedPct = (1 - data.free_bytes / data.total_bytes) * 100
       showStorageWarning(usedPct)
     }
@@ -784,7 +791,16 @@ function handleFileNotify(cmd, ok, d) {
     if (ok) {
       let offset = 2
       const count = d[offset++] | (d[offset++] << 8)
-      setResp('respFileList', I18N.t('files.found').replace('%d', count), true)
+      const msg = I18N.t('files.found').replace('%d', count)
+      const storageEl = document.getElementById('storageInfo')
+      const storageText = storageEl ? storageEl.textContent : ''
+      const el = document.getElementById('respFileList')
+      if (el) {
+        el.className = 'resp-msg'
+        el.style.display = 'flex'
+        el.style.justifyContent = 'space-between'
+        el.innerHTML = '<span>' + msg + '</span><span style="color:#8892a0;white-space:nowrap">' + storageText + '</span>'
+      }
       if (window.airmicWifiIp) { fetchFileList() }
       else {
         document.getElementById('fileList').innerHTML = '<div class="empty-state">' + I18N.t('files.noWifi') + '<br><span class="hint">' + I18N.t('files.noWifiHint') + '</span></div>'

@@ -66,6 +66,7 @@
       <button class="btn btn-sm btn-batch" onclick="deleteSelectedFiles(this)" data-i18n="files.deleteSelected">Delete Selected</button>
       <button class="btn btn-sm btn-batch btn-batch-danger" onclick="deleteAllFiles(this)" data-i18n="files.deleteAll">Delete All</button>
       <div class="toolbar-spacer"></div>
+      <span class="storage-info" id="storageInfo"></span>
       <button class="btn btn-sm btn-sort" id="btnSortName" onclick="setSort('name')" data-i18n="files.sortName">Name &#x25B4;</button>
       <button class="btn btn-sm btn-sort" id="btnSortSize" onclick="setSort('size')" data-i18n="files.sortSize">Size</button>
     </div>
@@ -243,12 +244,10 @@
       <input type="range" class="p-vol-slider" id="pVol" min="0" max="100" value="80"
              oninput="playerSetVolume(this.value/100)" title="Volume" data-i18n-title="player.volume">
     </div>
-    <div class="p-info">
-      <span class="resp-msg" id="respFileList">&mdash;</span>
-      <span class="storage-info" id="storageInfo"></span>
-    </div>
   </div>
 </div>
+
+<div class="resp-msg" id="respFileList">&mdash;</div>
 
 <div id="toast"></div>
 

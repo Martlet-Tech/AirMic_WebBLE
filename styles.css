@@ -229,34 +229,11 @@ body {
 .toolbar-spacer { flex: 1; }
 
 .storage-info {
-  font-size: 10px;
+  font-size: 11px;
   color: #8892a0;
   white-space: nowrap;
+  margin-right: 8px;
 }
-
-.p-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  margin-left: auto;
-  overflow: hidden;
-}
-.p-info .resp-msg {
-  font-size: 10px;
-  margin: 0;
-  padding: 0;
-  background: none;
-  border: none;
-  border-radius: 0;
-  flex-shrink: 0;
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.p-info .resp-msg.ok { color: var(--green); }
-.p-info .resp-msg.err { color: var(--red); }
 
 .btn-sort {
   font-family: var(--font-mono);
@@ -544,6 +521,7 @@ body {
 /* ── Controls ── */
 
 .p-row-ctl {
+  justify-content: space-between;
   margin-top: 1px;
 }
 
@@ -592,7 +570,6 @@ body {
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  margin-left: auto;
 }
 
 .p-vol-icon {
