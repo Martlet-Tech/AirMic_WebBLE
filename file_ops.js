@@ -596,12 +596,8 @@ async function playFile(filename) {
   s_selectedFile = filename
   s_selectedRow = row
 
-  // 提前创建 AudioContext（在 await 之前，保留用户手势上下文）
-  let decCtx = null
-  try { decCtx = new (window.AudioContext || window.webkitAudioContext)() } catch(e) {}
-
   let u = null
-  // AAC: try direct streaming first (/play endpoint now has no Content-Length conflict)
+  // AAC: decode via Aurora.js → WAV → play
   if (filename.toLowerCase().endsWith('.aac')) {
     const overlay = document.getElementById('aacLoading')
     if (overlay) overlay.style.display = 'flex'
@@ -609,10 +605,7 @@ async function playFile(filename) {
       const resp = await fetch(`http://${window.airmicWifiIp}/dl?${encodeURIComponent(filename)}`)
       const buf = await resp.arrayBuffer()
       console.log('AAC fetch: ' + buf.byteLength + ' bytes')
-      if (!decCtx) throw new Error('AudioContext not available')
-      if (decCtx.state === 'suspended') await decCtx.resume()
-      const audioBuf = await decCtx.decodeAudioData(buf.slice(0))
-      const wav = audioBufToWav(audioBuf)
+      const wav = await aacDecodeToWav(buf)
       if (overlay) overlay.style.display = 'none'
       console.log('WAV: ' + wav.byteLength + ' bytes')
       window.__lastWav = wav
@@ -620,11 +613,10 @@ async function playFile(filename) {
       s_blobUrl = u
     } catch (e) {
       if (overlay) overlay.style.display = 'none'
-      console.warn('AAC decode failed, trying direct play:', e.message)
-      // Fallback: stream directly via /play (no Content-Length conflict after fix)
-      // If browser supports AAC ADTS streaming, this works without conversion
-      u = `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
-      if (decCtx) decCtx.close()
+      console.error('AAC Aurora decode error:', e)
+      log(I18N.t('player.playFailed') + ': ' + filename + ' ' + (e.message||''), 'err')
+      playerStop()
+      return
     }
   }
   const url = u || `http://${window.airmicWifiIp}/play?${encodeURIComponent(filename)}`
