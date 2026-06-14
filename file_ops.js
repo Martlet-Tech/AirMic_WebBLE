@@ -596,8 +596,12 @@ async function playFile(filename) {
   s_selectedFile = filename
   s_selectedRow = row
 
+  // 提前创建 AudioContext（在 await 之前，保留用户手势上下文）
+  let decCtx = null
+  try { decCtx = new (window.AudioContext || window.webkitAudioContext)() } catch(e) {}
+
   let u = null
-  // AAC needs browser-side ADTS→M4A conversion (no server-side chunked streaming)
+  // AAC: decode to WAV via Web Audio API
   if (filename.toLowerCase().endsWith('.aac')) {
     const overlay = document.getElementById('aacLoading')
     if (overlay) overlay.style.display = 'flex'
@@ -605,7 +609,10 @@ async function playFile(filename) {
       const resp = await fetch(`http://${window.airmicWifiIp}/dl?${encodeURIComponent(filename)}`)
       const buf = await resp.arrayBuffer()
       console.log('AAC fetch: ' + buf.byteLength + ' bytes')
-      const wav = await aacToWav(buf)
+      if (!decCtx) throw new Error('AudioContext not available')
+      if (decCtx.state === 'suspended') await decCtx.resume()
+      const audioBuf = await decCtx.decodeAudioData(buf)
+      const wav = audioBufToWav(audioBuf)
       if (overlay) overlay.style.display = 'none'
       console.log('WAV blob: ' + wav.byteLength + ' bytes, ' +
         new DataView(wav).getUint32(24, true) + 'Hz')
@@ -615,8 +622,9 @@ async function playFile(filename) {
     } catch (e) {
       if (overlay) overlay.style.display = 'none'
       console.error('AAC convert error:', e)
-      log(I18N.t('player.playFailed') + ': ' + filename, 'err')
+      log(I18N.t('player.playFailed') + ': ' + filename + ' ' + (e.message||''), 'err')
       playerStop()
+      if (decCtx) decCtx.close()
       return
     }
   }
@@ -671,8 +679,10 @@ async function playFile(filename) {
 
   // Set up VU meter via Web Audio API
   try {
-    const actx = new (window.AudioContext || window.webkitAudioContext)()
-    // Mobile browsers may start AudioContext suspended; resume right away
+    let actx = decCtx
+    if (!actx || actx.state === 'closed') {
+      actx = new (window.AudioContext || window.webkitAudioContext)()
+    }
     if (actx.state === 'suspended') actx.resume()
     const source = actx.createMediaElementSource(audio)
     const analyser = actx.createAnalyser()
