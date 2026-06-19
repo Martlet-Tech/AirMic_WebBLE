@@ -125,6 +125,17 @@
           </select>
           <button class="btn btn-secondary btn-sm" onclick="cmdSetAgcMode()" id="btnAgcMode" disabled style="margin-top:6px" data-i18n="settings.apply">Apply</button>
         </div>
+        <div class="field-group">
+          <label class="field-label" data-i18n="settings.bitrate">AAC Bitrate</label>
+          <select id="selBitrate">
+            <option value="0" data-i18n="bitrate.vbr">Auto (VBR)</option>
+            <option value="128000" data-i18n="bitrate.128">128 kbps</option>
+            <option value="192000" data-i18n="bitrate.192">192 kbps</option>
+            <option value="256000" data-i18n="bitrate.256">256 kbps</option>
+            <option value="320000" data-i18n="bitrate.320">320 kbps</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="cmdSetBitrate()" id="btnBitrate" disabled style="margin-top:6px" data-i18n="settings.apply">Apply</button>
+        </div>
       </div>
     </div>
     <div class="setting-group">

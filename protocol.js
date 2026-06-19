@@ -87,6 +87,11 @@ function cmdSetAgcMode() {
   cmdConfigSet('agc_mode', 1, [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF])
 }
 
+function cmdSetBitrate() {
+  const v = parseInt(document.getElementById('selBitrate').value)
+  cmdConfigSet('bitrate', 1, [v & 0xFF, (v >> 8) & 0xFF, (v >> 16) & 0xFF, (v >> 24) & 0xFF])
+}
+
 async function cmdDeleteFile(filename) {
   const b = new ArrayBuffer(2 + 1 + filename.length)
   const v = new DataView(b)
@@ -286,6 +291,11 @@ function onNotify(e) {
         const val = d[off] | (d[off+1]<<8) | (d[off+2]<<16) | (d[off+3]<<24)
         const sel = document.getElementById('selAgcMode')
         console.log('[0x0B] agc_mode=' + val + ' sel=' + (sel ? sel.value : 'null'))
+        if (sel) sel.value = val
+        off += 4
+      } else if (key === 'bitrate' && type === 1) {
+        const val = d[off] | (d[off+1]<<8) | (d[off+2]<<16) | (d[off+3]<<24)
+        const sel = document.getElementById('selBitrate')
         if (sel) sel.value = val
         off += 4
       } else {
